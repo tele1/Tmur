@@ -1,0 +1,572 @@
+#!/bin/bash
+
+#       Name: Firewall TMur
+#       Version:  1 Beta
+#       License: GNU GPL v3  https://www.gnu.org/licenses/gpl-3.0.en.html
+
+
+#===================================================
+
+# Check root running
+[[ $EUID -ne 0 ]] && echo -e "'\e[0;31m' This script must be run as root. '\e[0m'" && exit 1
+
+# Relative path for read rules
+DIR_FIREWALL="$(dirname "$(readlink -f "$0")")"
+#echo "$DIR_FIREWALL"
+# Load rules
+. "$DIR_FIREWALL/rules/rules_drop_ipv4.sh"
+. "$DIR_FIREWALL/rules/rules_accept_ipv4.sh"
+. "$DIR_FIREWALL/rules/rules_log_ipv4.sh"
+# Load libs
+. "$DIR_FIREWALL/lib/system.settings.lib.sh"
+. "$DIR_FIREWALL/lib/messages.lib.sh"
+
+	#echo "$LINUX_DISTRIBUTION"
+
+#===================================================
+
+reset_firewall_v4() {
+echo -e " > Firewall has been reset."
+${PATH_BIN}iptables -F
+${PATH_BIN}iptables -X
+${PATH_BIN}iptables -t nat -F
+${PATH_BIN}iptables -t nat -X
+${PATH_BIN}iptables -t mangle -F
+${PATH_BIN}iptables -t mangle -X
+${PATH_BIN}iptables -t raw -F
+${PATH_BIN}iptables -t raw -X
+${PATH_BIN}iptables -t security -F
+${PATH_BIN}iptables -t security -X
+${PATH_BIN}iptables -P INPUT ACCEPT
+${PATH_BIN}iptables -P FORWARD ACCEPT
+${PATH_BIN}iptables -P OUTPUT ACCEPT
+}
+
+reset_firewall_v6() {
+echo -e " > Firewall has been reset."
+${PATH_BIN}ip6tables -F
+${PATH_BIN}ip6tables -X
+${PATH_BIN}ip6tables -t nat -F
+${PATH_BIN}ip6tables -t nat -X
+${PATH_BIN}ip6tables -t mangle -F
+${PATH_BIN}ip6tables -t mangle -X
+${PATH_BIN}ip6tables -t raw -F
+${PATH_BIN}ip6tables -t raw -X
+${PATH_BIN}ip6tables -t security -F
+${PATH_BIN}ip6tables -t security -X
+${PATH_BIN}ip6tables -P INPUT ACCEPT
+${PATH_BIN}ip6tables -P FORWARD ACCEPT
+${PATH_BIN}ip6tables -P OUTPUT ACCEPT
+}
+
+save() {
+echo -e " > Saving rules."
+	# Remove user permissions, before create file, then we will save rules to file 
+	umask 177
+	mkdir -p /etc/iptables
+	${PATH_BIN}iptables-save > /etc/iptables/rules.v4
+	${PATH_BIN}ip6tables-save > /etc/iptables/rules.v6
+	echo "$ADD_LIST_v4" > /etc/iptables/firewall.list.rules.v4
+	echo "$ADD_LIST_v6" > /etc/iptables/firewall.list.rules.v6
+
+    # Then we will create script to restore rules after reboot for any linux system.
+	system_iptables_save
+	#echo "Linux: $LINUX_DISTRIBUTION"
+}
+
+status_v4() {
+    # sed will remove counter [number:number]
+    # iptables-save inside Linux Mint includes a counter "IN DEFAULT"
+
+# Strange, I need sort all rules for Linux Mint. :( So this is simply sort, but not correct.
+    LOADED_FIREWALL_4=$(${PATH_BIN}iptables-save  | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g' | sort)
+    SAVED_FIREWALL_4=$(cat /etc/iptables/rules.v4 | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g' | sort)
+
+if ! cmp -s <(echo "$LOADED_FIREWALL_4") <(echo "$SAVED_FIREWALL_4") ; then
+    MESSAGE_DEBUG "$LOADED_FIREWALL_4"
+    MESSAGE_DEBUG "=================="
+    MESSAGE_DEBUG "$SAVED_FIREWALL_4"
+    MESSAGE_ERROR "Error: Loaded firewall ipv4 is other than saved in /etc/iptables/rules.v4"
+else
+    cat /etc/iptables/firewall.list.rules.v4
+fi
+}
+
+status_v6() {
+    # sed will remove counter [number:number]
+    LOADED_FIREWALL_6=$(${PATH_BIN}ip6tables-save | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g')
+    SAVED_FIREWALL_6=$(cat /etc/iptables/rules.v6 | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g')
+if ! cmp -s <(echo "$SAVED_FIREWALL_6") <(echo "$LOADED_FIREWALL_6") ; then
+    MESSAGE_ERROR "Error: Loaded firewall ipv6 is other than saved in /etc/iptables/rules.v6"
+else
+    cat /etc/iptables/firewall.list.rules.v6
+fi
+}
+
+check() {
+	reset
+	echo "================{"
+	echo "  ${PATH_BIN}ip a | grep inet ( show ipv4 and ipv6 ) "
+			 #ifconfig | grep inet
+			ip a | grep inet | awk '{print $1 " " $2}'
+	echo "================}"
+	echo "================{"
+	echo "  ${PATH_BIN}ip6tables -L -n -v --line-numbers"
+			${PATH_BIN}ip6tables -L -n -v --line-numbers
+	echo "================}"
+	echo "======================={"
+	echo "  ${PATH_BIN}iptables -L -n -v --line-numbers"
+			${PATH_BIN}iptables -L -n -v --line-numbers
+	echo "=======================}"
+
+	echo "======================={"
+	echo "  ${PATH_BIN}iptables -S"
+			${PATH_BIN}iptables -S
+	echo "=======================}"
+	echo "======================================{"
+	echo "  Used IPv4 rules:"
+			status_v4
+	echo "  Used IPv6 rules:"
+			status_v6
+	echo "======================================}"
+	echo "==============================={"
+	echo "  netstat -aepvt"
+			netstat -aepvt
+	echo "===============================}"
+}
+
+for_server_v4() {
+echo -e " > $FUNCNAME"
+if ${PATH_BIN}ifconfig | grep -q "inet " ; then 
+    ${PATH_BIN}iptables -P INPUT DROP \
+    -m comment --comment "Default policy for_server_v4"
+    ${PATH_BIN}iptables -P FORWARD DROP \
+    -m comment --comment "Default policy for_server_v4"
+    ${PATH_BIN}iptables -P OUTPUT DROP \
+    -m comment --comment "Default policy for_server_v4"
+else
+	if lsmod | grep -q ipv4 ; then
+		MESSAGE_ERROR "IPv4 is not active, but ipv4 module still running."
+    else
+		MESSAGE_ERROR "IPv4 is not active and ipv4 module is not active."
+	fi
+fi
+}
+
+for_server_v6() {
+echo -e " > $FUNCNAME"
+if ${PATH_BIN}ifconfig | grep -q inet6 ; then 
+	${PATH_BIN}ip6tables -P INPUT DROP \
+	-m comment --comment "Default policy for_server_v6"
+	${PATH_BIN}ip6tables -P FORWARD DROP \
+	-m comment --comment "Default policy for_server_v6"
+	${PATH_BIN}ip6tables -P OUTPUT DROP \
+	-m comment --comment "Default policy for_server_v6"
+else
+	if lsmod | grep -q ipv6 ; then
+		MESSAGE_ERROR "IPv6 is not active, but ipv6 module still running."
+    else
+		MESSAGE_ERROR "IPv6 is not active and module ipv6 is not active."
+	fi
+fi
+}
+
+for_desktop_v4() {
+echo -e " > $FUNCNAME"
+if ${PATH_BIN}ifconfig | grep -q "inet " ; then
+    ${PATH_BIN}iptables -P INPUT DROP \
+    -m comment --comment "Default policy for_desktop_v4"
+    ${PATH_BIN}iptables -P FORWARD DROP \
+    -m comment --comment "Default policy for_desktop_v4"
+    ${PATH_BIN}iptables -P OUTPUT ACCEPT \
+    -m comment --comment "Default policy for_desktop_v4"
+            ${PATH_BIN}iptables -A INPUT -i lo -j ACCEPT  \
+            -m comment --comment "Default policy for_desktop_v4"
+            ${PATH_BIN}iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT \
+            -m comment --comment "Default policy for_desktop_v4"
+            ##${PATH_BIN}iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
+            ##${PATH_BIN}iptables -A INPUT -p icmp --icmp-type 8 -j LOG --log-prefix "PING: " --log-level 4
+            ##${PATH_BIN}iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+else
+	if lsmod | grep -q ipv4 ; then
+		MESSAGE_ERROR "IPv4 is not active, but ipv4 module still running."
+    else
+		MESSAGE_ERROR "IPv4 is not active and ipv4 module is not active."
+	fi
+fi
+
+
+}
+
+for_desktop_v6() {
+echo -e " > $FUNCNAME"
+if ${PATH_BIN}ifconfig | grep -q inet6 ; then 
+	${PATH_BIN}ip6tables -P INPUT DROP \
+	-m comment --comment "Default policy for_desktop_v6"
+	${PATH_BIN}ip6tables -P FORWARD DROP \
+	-m comment --comment "Default policy for_desktop_v6"
+	${PATH_BIN}ip6tables -P OUTPUT ACCEPT \
+	-m comment --comment "Default policy for_desktop_v6"
+            ${PATH_BIN}ip6tables -A INPUT -i lo -j ACCEPT \
+	        -m comment --comment "Default policy for_desktop_v6"
+            ${PATH_BIN}ip6tables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT \
+	        -m comment --comment "Default policy for_desktop_v6"
+else
+	if lsmod | grep -q ipv6 ; then
+		MESSAGE_ERROR "IPv6 is not active, but ipv6 module still running."
+    else
+		MESSAGE_ERROR "IPv6 is not active and module ipv6 is not active."
+	fi
+fi
+}
+
+check_ip_v4() {
+if ! expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
+    MESSAGE_ERROR "IPv4 is not correct. = $1" ; exit 1
+fi
+}
+
+check_ip_v6() {
+# not tested, and not used
+if [[ ! $1 =~ ^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$ ]]; then
+    MESSAGE_ERROR "IPv6 is not correct. = $1" ; exit 1
+fi
+}
+
+# For show all rules in help
+RULES_ALL="$(compgen -A function | grep  "^accept\|^drop\|^log" | sort)"
+#MESSAGE_DEBUG "$RULES_ALL"
+#========================================================================================={
+case $1 in
+  "-fd4"|"--for_desktop.v4")
+	reset_firewall_v4
+		echo "Loading desktop rules to iptables ... "
+		for i in "${@:2}" ; do "$i" ; done
+	for_desktop_v4
+	export ADD_LIST_v4=$( echo "for_desktop_v4 ${@:2}" | sort -r | tr ' ' '\n' | sed -e '/^\ *$/d' )
+	save
+  ;;
+  "-fd6"|"--for_desktop.v6")
+	reset_firewall_v4
+		echo "Loading desktop rules to iptables ... "
+		for i in "${@:2}" ; do "$i" ; done
+	for_desktop_v6
+	export ADD_LIST_v6=$( echo "for_desktop_v6 ${@:2}" | sort -r | tr ' ' '\n' | sed -e '/^\ *$/d' )
+	save
+  ;;
+  "-fs4"|"--for_server.v4")
+	reset_firewall_v4
+		echo "Loading server rules to iptables ... "
+		for i in "${@:2}" ; do "$i" ; done
+	for_server_v4
+	export ADD_LIST_v4=$( echo "for_server_v4 ${@:2}" | sort -r | tr ' ' '\n' | sed -e '/^\ *$/d' )
+	save
+  ;;
+  "-fs6"|"--for_server.v6")
+	reset_firewall_v6
+		echo "Loading server rules to iptables ... "
+		for i in "${@:2}" ; do "$i" ; done
+	for_server_v6
+	export ADD_LIST_v4=$( echo "for_server_v6 ${@:2}" | sort -r | tr ' ' '\n' | sed -e '/^\ *$/d' )
+	save
+  ;;
+  "--reset_firewall.v4")
+	reset_firewall_v4
+	save
+  ;;
+  "--reset_firewall.v6")
+	reset_firewall_v6
+	save
+  ;;
+#------------------------
+  "--allrules"|"-ar")
+		echo "$RULES_ALL"
+  ;;
+  "-a4"|"--add.v4")
+		# Check if rule is correct
+		for i in ${@:2} ; do
+			if ! compgen -A function | grep -qw "${i}"; then
+				echo "Rule not exist: ${i}" ; exit 1
+			elif status_v4 | grep -q "${i}" ; then
+				echo "${i} is active, if you want change, remove old rule." ; exit 1
+			fi
+		done
+		echo "--> We will add: ${@:2} "
+		WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/firewall.list.rules.v4)\n${@:2}" | sort -r | tr '\n' ' ')
+		reset_firewall_v4
+		echo "== Loading rules ... == "
+		for i in ${WITH_NEW_RULES} ; do "$i" ; done
+        # sed will delete blank lines
+		export ADD_LIST_v4=$( echo "$WITH_NEW_RULES" | tr ' ' '\n' | sed -e '/^\ *$/d' )
+		save
+		#echo "== Used rules now: =="
+		#	cat /etc/iptables/firewall.list.rules.v4
+		#echo "==             =="
+  ;;
+ "-r4"|"--remove.v4")
+		# Check if rule is correct
+		if ! status_v4 | grep -qw "${2}"; then
+			echo "Rule is not active: ${2}" ; exit 1
+		fi
+		echo " --> We will remove: ${2} "
+		NEW_RULES=$(cat /etc/iptables/firewall.list.rules.v4 | sed "/${2}/d" | tr '\n' ' ')
+		# echo " --> New rules: $NEW_RULES"
+		reset_firewall_v4
+		echo "== Loading rules ... == "
+		for i in ${NEW_RULES} ; do "$i" ; done
+		export ADD_LIST_v4=$( echo "$NEW_RULES" | tr ' ' '\n' )
+		save
+		#echo "== Used rules now: =="
+		#	cat /etc/iptables/firewall.list.rules.v4
+		#echo "==             =="
+  ;;
+  "--block.v4")
+#  "--allow.v4"|"--block.v4"|"--log.v4")
+    #MESSAGE_DEBUG "|| 1= $1 || 2= $2 || 3= $3"
+    check_ip_v4 ${2}
+    COMMENT="-m comment --comment "IPTABLES:block_IP""
+    RULE_IP_1=$(echo "${PATH_BIN}iptables -I INPUT  -s ${2} -j DROP ${COMMENT}")
+    RULE_IP_2=$(echo "${PATH_BIN}iptables -I OUTPUT -d ${2} -j DROP ${COMMENT}")
+    WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/firewall.list.rules.v4)\n${RULE_IP_1} \n${RULE_IP_2}")
+    MESSAGE_DEBUG "$WITH_NEW_RULES"
+
+    reset_firewall_v4
+    echo "== Loading rules ... == "
+    while read ; do 
+        $REPLY ; 
+    done <<< "$WITH_NEW_RULES"
+    export ADD_LIST_v4=$(echo "$WITH_NEW_RULES")
+    save
+  ;;
+  "--block.range.v4")
+    check_ip_v4 ${2}
+    check_ip_v4 ${3}
+    COMMENT="-m comment --comment "IPTABLES:block_range_of_IP""
+    RULE_IP_1=$(echo "${PATH_BIN}iptables -I INPUT  -m iprange --src-range ${2}-${3} -j DROP ${COMMENT}")
+    RULE_IP_2=$(echo "${PATH_BIN}iptables -I OUTPUT -m iprange --dst-range ${2}-${3} -j DROP ${COMMENT}")
+    WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/firewall.list.rules.v4)\n${RULE_IP_1} \n${RULE_IP_2}")
+    MESSAGE_DEBUG "$WITH_NEW_RULES"
+
+    reset_firewall_v4
+    echo "== Loading rules ... == "
+    while read ; do 
+        $REPLY ; 
+    done <<< "$WITH_NEW_RULES"
+    export ADD_LIST_v4=$(echo "$WITH_NEW_RULES")
+    save
+  ;;
+#------------------------
+  "-lalm4")
+	cat /proc/net/ip_tables_matches
+  ;;
+  "-lalm6")
+	cat /proc/net/ip6_tables_matches
+  ;;
+  "-laam")
+	ls /lib/modules/`uname -r`/kernel/net/netfilter/
+  ;;
+#------------------------
+  "--export.v4")
+		## If variable is empty
+		[ -z "$2" ] && FILE="firewall.list.rules.save.v4" ||  FILE="$2"
+		echo "== Used rules: =="
+			## Last option is moved to begin then you can add options hand.
+			FIRST=$(tail -n 1 /etc/iptables/firewall.list.rules.v4)
+			SECOND=$(grep -v "${FIRST}" /etc/iptables/firewall.list.rules.v4 |  tr '\n' ' ')
+			# remove user permissions, before create file
+			umask 177
+			# Create file
+			echo "$FIRST $SECOND" | tee ${FILE}
+		echo "==             =="
+		echo "Rules saved to ${FILE} ."
+  ;;
+  "--export.v6")
+		## If variable is empty
+		[ -z "$2" ] && FILE="firewall.list.rules.save.v6" ||  FILE="$2"
+		echo "== Used rules: =="
+			## Last option is moved to begin then you can add options hand.
+			FIRST=$(tail -n 1 /etc/iptables/firewall.list.rules.v6)
+			SECOND=$(grep -v "${FIRST}" /etc/iptables/firewall.list.rules.v6 |  tr '\n' ' ')
+			# remove user permissions, before create file
+			umask 177
+			# Create file
+			echo "$FIRST $SECOND" | tee ${FILE}
+		echo "==             =="
+		echo "Rules saved to ${FILE} ."
+  ;;
+  "--import.v4")
+		[ -z "$2" ] &&  echo "But which file import ?" && exit 1
+	echo "== Used before rules: =="
+		cat /etc/iptables/firewall.list.rules.v4
+	echo "==             =="
+			FIRST=$(awk '{print $1;}' $2)
+			SECOND=$(cut -d' ' -f2- $2)
+	reset_firewall_v4
+	for i in $SECOND ; do "$i" ; done
+	$FIRST
+	export ADD_LIST_v4=$( echo "${SECOND} $FIRST" | tr ' ' '\n' | sed -e '/^\ *$/d' )
+	save
+	echo "== Used rules: =="
+		cat /etc/iptables/firewall.list.rules.v4
+	echo "==             =="
+  ;;
+ "--import.v6")
+		[ -z "$2" ] &&  echo "But which file import ?" && exit 1
+	echo "== Used before rules: =="
+		cat /etc/iptables/firewall.list.rules.v6
+	echo "==             =="
+			FIRST=$(awk '{print $1;}' $2)
+			SECOND=$(cut -d' ' -f2- $2)
+	reset_firewall_v6
+	for i in $SECOND ; do "$i" ; done
+	$FIRST
+	export ADD_LIST_v4=$( echo "${SECOND} $FIRST" | tr ' ' '\n' | sed -e '/^\ *$/d' )
+	save
+	echo "== Used rules: =="
+		cat /etc/iptables/firewall.list.rules.v6
+	echo "==             =="
+  ;;
+#------------------------
+  "-s4"|"--status.v4")
+    status_v4
+  ;;
+  "-s6"|"--status.v6")
+    status_v6
+  ;;
+  "-sa"|"--status.all")
+    status_v4
+    status_v6
+  ;;
+  "-c"|"--check")
+	check
+  ;;
+  "-if"|"--ifconfig")
+	ifconfig | grep -v 'RX\|TX'
+  ;;
+  "--numbers")
+	"${PATH_BIN}"iptables -L --line-numbers -n
+  ;;
+  "-n"|"--nmap")
+	. "$DIR_FIREWALL/doc/test.firewall.sh"
+  ;;
+  "--syslog")
+	grep "IPTABLES:" /var/log/syslog
+  ;;
+  "--rtlog")
+    tail -f /var/log/syslog
+  ;;
+  "--clrlog")
+	sed -i 's/IPTABLES://g' /var/log/syslog
+  ;;
+#------------------------
+  "--help"|"-h")
+		echo "----------------------------------------------------------------------------"
+		echo "usage: $0 --option rules"
+		echo " "
+		echo "for example:"
+		echo " ./script for_server drop_invalid accept_web_browser"
+		echo "	"
+		echo "----------------------------------------------------------------------------"
+		echo "== Available Options: == " 
+		echo "	"
+		echo " Main:"
+		echo "   -fd4  --for_desktop.v4        enable firewall with ACCEPT only for output"
+		echo "   -fd6  --for_desktop.v6        enable firewall with ACCEPT only for output"
+		echo "   -fs4  --for_server.v4         enable firewall with DROP for all"
+		echo "   -fs6  --for_server.v6         enable firewall with DROP for all"
+		echo "         --reset_firewall.v4     open firewall IPv4"
+		echo "         --reset_firewall.v6     open firewall IPv6"
+		echo "	"
+		echo "   -ar4  --allrules.v4           show all available rules IPv4"
+		echo "   -a4   --add.v4                add example rule to exist firewall IPv4"
+		echo "   -r4   --remove.v4             remove rule from firewall IPv4"
+		echo "	"
+		echo "   -lalm4                        List all loaded modules IPv4"
+		echo "   -lalm6                        List all loaded modules IPv6"
+		echo "   -laam                         List all available netfilter modules"
+		echo "	"
+		echo "         --export.v4             export active IPv4 rules to file"
+		echo "         --export.v6             export active IPv6 rules to file"
+		echo "         --import.v4             import IPv4 rules from file"
+		echo "         --import.v6             import IPv6 rules from file"
+		echo "	"
+		echo " Test:"
+		echo "   -s4   --status.v4             show status firewall IPv4"
+		echo "   -s6   --status.v6             show status firewall IPv6"
+		echo "   -sa   --status.all            show status firewall IPv4 and IPv6"
+		echo "   -c    --check                 show iptables, netstat and status"
+		echo "   -if   --ifconfig              short form ifconfig"
+		echo "         --numbers               show IPv4 rules with line numbers"
+		echo "   -n    --nmap                  show examples with nmap to scan firewall"
+		echo "         --syslog                show iptables logs from syslog"
+		echo "         --rtlog                 show syslog log in real time (Press Ctrl+C to exit)"
+		echo "         --clrlog                remove lines containing the word IPTABLES: from syslog (After this you will need reboot system)"
+		echo "	"
+		echo " Other:"
+		echo "   -h    --help                  show help"
+		echo "         --doc.tmur              info about edit and create rules in ./rules/"	
+		echo "         --doc.iptables          show examples of iptables rules"
+		echo "         --doc.net               example links about internet / network "
+		echo "	"
+		echo " There are additional options, but don't use them"
+		echo " ( Groups or single rules are easier to sort than all at once. )"
+		echo " edit files in ./rules/ instead use this options: "
+		echo "         --block.v4 IP            add rule with block IPv4, IP you need write"
+		echo "         --block.range.v4 IP IP   add rule to block range from IPv4 to IPv4"
+		echo "         --doc.gen.online         Sample generators online for iptables."
+		echo "	"
+		echo "----------------------------------------------------------------------------"
+		echo "== Available rules for option \"add\" or \"remove\":" 
+		echo "	"
+		echo "$RULES_ALL" | column
+		echo "	"
+		echo "== Used rules now for IPv4: =="
+				status_v4
+		echo "== Used rules now for IPv6: =="
+				status_v6
+		echo "	"
+		echo "== Iptables -S: =="
+                if ${PATH_BIN}ifconfig | grep -q "inet " ; then 
+				    iptables -S
+                else
+	                if lsmod | grep -q ipv4 ; then
+		                MESSAGE_ERROR "IPv4 is not active, but ipv4 module still running."
+                    else
+		                MESSAGE_ERROR "IPv4 is not active and ipv4 module is not active."
+	                fi
+                fi
+		echo "	"
+		echo "== Ip6tables -S: =="
+                if ${PATH_BIN}ifconfig | grep -q inet6 ; then 
+				    ip6tables -S
+                else
+	                if lsmod | grep -q ipv6 ; then
+		                MESSAGE_ERROR "IPv6 is not active, but ipv6 module still running."
+                    else
+		                MESSAGE_ERROR "IPv6 is not active and module ipv6 is not active."
+	                fi
+                fi
+		echo "	"
+		echo "==             =="
+  ;;
+  "--doc.tmur")
+	cat "$DIR_FIREWALL/doc/doc.tmur"
+  ;;
+  "--doc.iptables")
+	cat "$DIR_FIREWALL/doc/doc.iptables"
+  ;;
+  "--doc.net")
+	cat "$DIR_FIREWALL/doc/doc.net"
+  ;;
+  "--doc.gen.online")
+	cat "$DIR_FIREWALL/doc/doc.gen.online"
+  ;;
+#------------------------
+  *)
+	## unknown option
+	echo "	Error: unknown option"		
+	echo "	Try use: $0 --help"
+	exit
+  ;;
+esac
+#===================================================================================}

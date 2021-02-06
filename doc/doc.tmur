@@ -1,0 +1,50 @@
+
+    ==    Info:    ==
+
+    1. Iptables working like "small marble machine" , with switch track
+        "ACCEPT, DROP, REJECT " remember about it, when you sort / choose the rules.
+        It is very important for the operation of the rules.
+        For example when you set:
+            " iptables -I INPUT  -s 127.0.0.1 -j DROP "
+            " iptables -I INPUT  -s 127.0.0.1 -j LOG "
+        From output "iptables -S" you will see
+            "-A INPUT -s 127.0.0.1/32  -j LOG  "
+            "-A INPUT -s 127.0.0.1/32  -j DROP "
+        And this is correct because if the connection is first rejected then it cannot be logged. 
+        In a similar way, you can create a hole in the firewall for uninvited guests.
+        So always check "iptables -S" output.
+        More documentation about iptables in  https://netfilter.org/documentation/
+
+    2. Always try to create the necessary rules first and test in a virtual machine.
+        Because I cannot be responsible for errors if for you something  will works differently.
+        Because some rules are copied from the internet and I not tested. 
+
+
+    ==    Rules Construction:    ==
+
+    1. The rules have been specially divided into files for better transparency.
+        rules_accept_ipv4.sh
+        rules_drop_ipv4.sh
+        rules_log_ipv4.sh
+
+    2. The name ipv4 is intended to distinguish between ipv4 and ipv6 rules.
+
+    3. Each set of rules is built into functions and described.
+
+    4. Relative path has been added for security. 
+        But it is very possible that it is unnecessary for the root account. 
+
+    5. Rules with name "drop_" usually are first load in iptables, for protection,
+        and they contain option "-I" 
+
+    6. Rules with name "accept_" are load at the end, and have added option "-A" 
+
+    7. Failure to respect the "accept_" "drop_" "log_"
+        names may cause the script to malfunction
+ 
+    8. KIS - Keep It Simple. Keep your code simple and readable if possible. 
+
+
+    PLEASE, ADAPT THE ABOVE CONSTRUCTION,
+    TO YOUR OWN RULES, IF YOU WANT ADD.
+    ========================================================
