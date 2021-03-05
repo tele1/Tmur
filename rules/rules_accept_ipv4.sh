@@ -2,7 +2,10 @@
 
 ETH=""
 
-accept_desktop_ftp_passive() {
+
+
+
+accept_v4_desktop_ftp_passive() {
 echo -e " > $FUNCNAME"
 
 #  lsmod | grep ip_tables
@@ -23,7 +26,10 @@ ${PATH_BIN}iptables -A OUTPUT -s 192.168.1.0/24 -d 192.168.1.0/24 -p tcp -m tcp 
 ${PATH_BIN}iptables -A OUTPUT -s 192.168.1.0/24 -d 192.168.1.0/24 -p tcp -m tcp --sport 1024:65535 --dport 1024:65535 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT -m comment --comment "ftp client"
 }
 
-accept_server_ftp_passive() {
+
+
+
+accept_v4_server_ftp_passive() {
 echo -e " > $FUNCNAME"
 
 # Server
@@ -35,19 +41,28 @@ ${PATH_BIN}iptables -A OUTPUT -s 192.168.1.0/24 -d 192.168.1.0/24 -p tcp -m tcp 
 ${PATH_BIN}iptables -A OUTPUT -s 192.168.1.0/24 -d 192.168.1.0/24 -p tcp -m tcp --sport 1024:65535 --dport 1024:65535 -m conntrack --ctstate ESTABLISHED -j ACCEPT -m comment --comment "ftp server"
 }
 
-accept_server_rsync() {
+
+
+
+accept_v4_server_rsync() {
 echo -e " > $FUNCNAME"
 ${PATH_BIN}iptables -A INPUT -i $ETH -p tcp -m tcp --dport 873 -m state --state NEW,ESTABLISHED -j ACCEPT -m comment --comment "server_rsync"
 ${PATH_BIN}iptables -A OUTPUT -o $ETH -p tcp --sport 873 -m state --state ESTABLISHED -j ACCEPT -m comment --comment "server_rsync"
 }
 
-accept_desktop_rsync() {
+
+
+
+accept_v4_desktop_rsync() {
 echo -e " > $FUNCNAME"
 ${PATH_BIN}iptables -A INPUT -i $ETH -p tcp -m tcp --dport 873 -m state --state ESTABLISHED -j ACCEPT -m comment --comment "desktop_rsync"
 ${PATH_BIN}iptables -A OUTPUT -o $ETH -p tcp --sport 873 -m state --state NEW,ESTABLISHED -j ACCEPT -m comment --comment "desktop_rsync"
 }
 
-accept_server_ssh() {
+
+
+
+accept_v4_server_ssh() {
 echo -e " > $FUNCNAME"
 # accept_server_ssh = Accept incoming connection to SSH server with stop Brute Force Attacks.
 ${PATH_BIN}iptables -N SSHSCAN  -m comment --comment "server_ssh"
@@ -70,7 +85,10 @@ ${PATH_BIN}iptables -A OUTPUT -o $ETH -p tcp -m tcp --dport 22 -m state --state 
 ##${PATH_BIN}iptables -A INPUT -m state --state NEW -p tcp --dport 4444 -j ACCEPT
 }
 
-accept_server_vnc() {
+
+
+
+accept_v4_server_vnc() {
 echo -e " > $FUNCNAME"
 # accept_vnc_for_server = vnc ( SSH tunneling is safer )
 ${PATH_BIN}iptables -A INPUT -i $ETH -p tcp --dport 5901 -m state --state NEW,ESTABLISHED -j ACCEPT \ 
@@ -79,7 +97,10 @@ ${PATH_BIN}iptables -A OUTPUT -o $ETH -p tcp --dport 5901 -m state --state ESTAB
 -m comment --comment "accept_server_vnc" 
 }
 
-accept_desktop_vbox() {
+
+
+
+accept_v4_desktop_vbox() {
 echo " > $FUNCNAME"
 # accept_desktop_vbox = Accept connection from virtualbox.
 ${PATH_BIN}iptables -A INPUT -i $ETH -p tcp --sport 3389 -m state --state ESTABLISHED -j ACCEPT \
@@ -88,7 +109,10 @@ ${PATH_BIN}iptables -A OUTPUT -o $ETH -p tcp --dport 3389 -m state --state NEW,E
 -m comment --comment "accept_desktop_vbox" 
 }
 
-accept_desktop_web_browser() {
+
+
+
+accept_v4_desktop_web_browser() {
 echo " > $FUNCNAME"
 # accept_desktop_web_browser = Accept DNS HTTP HTTPS from web browser.
 ${PATH_BIN}iptables -A INPUT -i $ETH -p udp --sport 53 -m state --state ESTABLISHED -j ACCEPT \
@@ -107,7 +131,10 @@ ${PATH_BIN}iptables -A OUTPUT -o $ETH -p tcp --dport 443 -m state --state NEW,ES
 -m comment --comment "accept_web_browser , HTTPS" 
 }
 
-accept_desktop_mail() {
+
+
+
+accept_v4_desktop_mail() {
 echo " > $FUNCNAME"
 # more in https://support.linuxpl.com/Knowledgebase/Article/View/86/3/porty-dla-uslug-pocztowych-pop3-imap-smtp-oraz-ssl
 # accept_desktop_mail_pop3 = Accept download messages with pop3 in e-mail
@@ -123,7 +150,10 @@ ${PATH_BIN}iptables -A OUTPUT -o $ETH -p tcp --dport 465 -m state --state NEW,ES
 -m comment --comment "accept_mail_smtp" 
 }
 
-accept_desktop_qtox() {
+
+
+
+accept_v4_desktop_qtox() {
 echo -e " > $FUNCNAME"
 # accept_desktop_qtox = Accept connection from Qtox Instant Messaging.
 ${PATH_BIN}iptables -A INPUT -i $ETH -p tcp --sport 33445 -m state --state ESTABLISHED -j ACCEPT \
@@ -132,7 +162,10 @@ ${PATH_BIN}iptables -A OUTPUT -o $ETH -p tcp --dport 33445 -m state --state NEW,
 -m comment --comment "accept_desktop_qtox" 
 }
 
-accept_desktop_ntp() {
+
+
+
+accept_v4_desktop_ntp() {
 echo -e " > $FUNCNAME"
 ${PATH_BIN}iptables -A INPUT -i $ETH -p udp -m state --state ESTABLISHED,RELATED --dport 123 -j ACCEPT \
 -m comment --comment "accept__desktop_ntp" 
@@ -140,7 +173,10 @@ ${PATH_BIN}iptables -A OUTPUT -o $ETH -p udp -m udp --sport 123 -j ACCEPT \
 -m comment --comment "accept__desktop_ntp" 
 }
 
-accept_desktop_printing() {
+
+
+
+accept_v4_desktop_printing() {
 echo -e " > $FUNCNAME"
 ${PATH_BIN}iptables -A INPUT -p udp -m udp --dport 631 -j ACCEPT \
 -m comment --comment "accept__desktop_printing" 
@@ -163,12 +199,9 @@ ${PATH_BIN}iptables -A OUTPUT -p tcp -m tcp --sport 631 -j ACCEPT \
 #${PATH_BIN}iptables -A OUTPUT -m owner --gid-owner GROUP_NAME   -j ACCEPT
 #}
 
-accept_log_INPUT_and_OUTPUT() {
-${PATH_BIN}iptables -A INPUT -j LOG --log-prefix "INPUT info:" --log-level 6
-${PATH_BIN}iptables -A OUTPUT -j LOG --log-prefix "OUTPUT info:" --log-level 6
-}
 
-# Log lvl : http://fibrevillage.com/sysadmin/202-enable-linux-${PATH_BIN}iptables-logging
-# Logging : https://tecadmin.net/enable-logging-in-${PATH_BIN}iptables-on-linux/
+
+
+
 
 #----------------------ACCEPT-----------------------------}

@@ -3,7 +3,8 @@
 #       Name: Firewall TMur
 #       Version:  1 Beta
 #       License: GNU GPL v3  https://www.gnu.org/licenses/gpl-3.0.en.html
-
+#       Destiny: Script for easy management of the iptables firewall.
+#       Using the script from root:     bash tmur --help
 
 #===================================================
 

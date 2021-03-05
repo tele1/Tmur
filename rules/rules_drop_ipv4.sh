@@ -128,7 +128,7 @@ ${PATH_BIN}iptables -I OUTPUT -m state --state INVALID -j LOG --log-prefix "IPTA
 
 
 
-#drop_spoofing() {
+#drop_v4_spoofing() {
 #echo -e " > $FUNCNAME"
 ## ANTY-SPOOFING
 #${PATH_BIN}iptables -I INPUT -i $ETH -s ! 192.168.1.0/24 -j LOG --log-prefix "INPUT SPOOFED PKT "
@@ -147,7 +147,7 @@ ${PATH_BIN}iptables -I OUTPUT -m state --state INVALID -j LOG --log-prefix "IPTA
 
 
 
-drop_null() {
+drop_v4_null() {
 echo -e " > $FUNCNAME"
 # Drop all NULL packets
 ${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags ALL NONE -j DROP
@@ -156,7 +156,7 @@ ${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags ALL NONE -j DROP
 
 
 
-drop_bruteforce_ssh() {
+drop_v4_bruteforce_ssh() {
 echo -e " > $FUNCNAME"
 ${PATH_BIN}iptables -I INPUT -p tcp --dport 22 -i $ETH -m state --state NEW -m recent --set
 ${PATH_BIN}iptables -I INPUT -p tcp --dport 22 -i $ETH -m state --state NEW -m recent  --update --seconds 60 --hitcount 4 -j DROP
@@ -167,7 +167,7 @@ ${PATH_BIN}iptables -I INPUT -p tcp --dport 22 -i $ETH -m state --state NEW -m r
 
 
 
-drop_ident() {
+drop_v4_ident() {
 echo -e " > $FUNCNAME"
 # To prevent ICMP unreachable packets being sent
 ${PATH_BIN}iptables -I OUTPUT -p icmp --icmp-type destination-unreachable -j DROP
@@ -179,7 +179,7 @@ ${PATH_BIN}iptables -I INPUT -p tcp --dport 1080 -j REJECT --reject-with icmp-po
 
 
 
-drop_scan() {
+drop_v4_scan() {
 echo -e " > $FUNCNAME"
 # Anyone who scans us will be blocked for a whole day:
 ${PATH_BIN}iptables -I INPUT   -m recent --name portscan --rcheck --seconds 86400 -j DROP
@@ -192,7 +192,7 @@ ${PATH_BIN}iptables -I FORWARD -m recent --name portscan --remove
 
 
 
-drop_from_list_scaners() {
+drop_v4_from_list_scaners() {
 echo -e " > $FUNCNAME"
 # Regoly, ktore dodaja skanujacych do “ listy skanerow “ I zapisuja proby skanow:
 ${PATH_BIN}iptables -I INPUT   -p tcp -m tcp --dport 139 \
@@ -209,14 +209,14 @@ ${PATH_BIN}iptables -I FORWARD -p tcp -m tcp --dport 139 \
 
 
 
-drop_unclean() {
+drop_v4_unclean() {
 echo -e " > $FUNCNAME"
 # Dropping atypical packets ( Experimental module “unclean” )
 echo " This is Experimental module “unclean”"
 ${PATH_BIN}iptables -I INPUT -j DROP -m unclean
 }
 
-drop_hole_1() {
+drop_v4_hole_1() {
 echo -e " > $FUNCNAME"
 # Closing the gap in ${PATH_BIN}iptables # 
 ${PATH_BIN}iptables -I OUTPUT -m state -p icmp --state INVALID -j DROP
@@ -225,7 +225,7 @@ ${PATH_BIN}iptables -I OUTPUT -m state -p icmp --state INVALID -j DROP
 
 
 
-drop_upnp() {
+drop_v4_upnp() {
 echo " > $FUNCNAME"
 ${PATH_BIN}iptables -I INPUT -p tcp --sport 2869 -j DROP \
 -m comment --comment "drop_upnp" 
@@ -243,7 +243,7 @@ ${PATH_BIN}iptables -I INPUT -p udp --sport 1900 -j DROP \
 
 
 
-drop_cups() {
+drop_v4_cups() {
 echo " > $FUNCNAME"
 ${PATH_BIN}iptables -I INPUT -p tcp --sport 631 -j REJECT \
 -m comment --comment "drop_cups" 
@@ -258,7 +258,7 @@ ${PATH_BIN}iptables -I OUTPUT -p udp --dport 631 -j REJECT \
 
 
 
-drop_low_MSS() {
+drop_v4_low_MSS() {
 echo " > $FUNCNAME"
 ## block connections with low MSSs
 ## https://github.com/Netflix/security-bulletins/blob/master/advisories/third-party/2019-001.md
@@ -270,7 +270,7 @@ ${PATH_BIN}ip6tables -I INPUT -p tcp -m tcpmss --mss 1:500 -j DROP
 
 
 
-drop_DNS_Tunneling() {
+drop_v4_DNS_Tunneling() {
 echo " > $FUNCNAME"
 ## NOT TESTED YET, but you can test :)
 ##  https://www.youtube.com/watch?v=q3dPih_8Cro
