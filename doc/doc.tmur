@@ -41,8 +41,15 @@
 
     7. Failure to respect the "accept_" "drop_" "log_"
         names may cause the script to malfunction
- 
-    8. KIS - Keep It Simple. Keep your code simple and readable if possible. 
+
+    8. The maximum value of characters for --log-prefix and --comment in rules for iptables is 29.
+        If you use in own function with rules "$FUNCNAME" variable, then 
+        Please do not exceed this value also for own function.
+        Because if a comment will too long, then iptables will only use the beginning of comment.
+
+    9. In functions with iptables rules I used variables to reduce the line length and make the code more readable.
+
+    10. KIS - Keep It Simple. Keep your code simple and readable if possible. 
 
 
     PLEASE, ADAPT THE ABOVE CONSTRUCTION,

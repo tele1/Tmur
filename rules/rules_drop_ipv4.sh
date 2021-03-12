@@ -15,6 +15,22 @@ ${PATH_BIN}iptables -I INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,R
 
 
 
+
+
+drop_v4_ack_scan_long_long2_long3_long4() {
+echo -e " > $FUNCNAME"
+## PROTECTION BEFORE SCANNING ACK SCAN
+    COMMENT="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPTABLES:${FUNCNAME}:"
+
+${PATH_BIN}iptables -I INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH ACK $DROP
+${PATH_BIN}iptables -I INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH ACK $LOG 
+}
+
+
+
+
+
 drop_v4_fin_scan() {
 echo -e " > $FUNCNAME"
 ## PROTECTION BEFORE SCANNING FIN SCAN
@@ -275,19 +291,22 @@ echo " > $FUNCNAME"
 ## NOT TESTED YET, but you can test :)
 ##  https://www.youtube.com/watch?v=q3dPih_8Cro
 ##  https://inside-out.xyz/technology/how-dns-tunneling-works.html
-#${PATH_BIN}iptables -I OUTPUT -p udp --sport 53 -m length --length 512:65535 -j DROP \
-#-m comment --comment "drop_DNS_Tunneling"
-#${PATH_BIN}iptables -I OUTPUT -p udp --dport 53 -m length --length 512:65535 -j DROP \
-#-m comment --comment "drop_DNS_Tunneling"
 
-${PATH_BIN}iptables -I OUTPUT -p tcp --sport 53 -m length --length 1025:65535 -j LOG --log-prefix "DNS_Tunneling: " \
--m comment --comment "log_DNS_Tunneling"
-${PATH_BIN}iptables -I OUTPUT -p tcp --sport 53 -m length --length 1025:65535 -j DROP \
--m comment --comment "drop_DNS_Tunneling"
-${PATH_BIN}iptables -I OUTPUT -p tcp --sport 53 -m length --length 1025:65535 -j LOG --log-prefix "DNS_Tunneling: " \
--m comment --comment "log_DNS_Tunneling"
-${PATH_BIN}iptables -I OUTPUT -p tcp --dport 53 -m length --length 1025:65535 -j DROP \
--m comment --comment "drop_DNS_Tunneling"
+## For client
+## The maximum value of characters for --log-prefix and --comment is 29.
+COMMENT="-m comment --comment $FUNCNAME"
+LOG="LOG --log-prefix IPTA:${FUNCNAME}:"
+${PATH_BIN}iptables -I OUTPUT -p udp --dport 53 -m length --length 1025:65535 -j DROP $COMMENT
+${PATH_BIN}iptables -I OUTPUT -p udp --dport 53 -m length --length 1025:65535 -j $LOG
+
+${PATH_BIN}iptables -I OUTPUT -p udp --sport 53 -m length --length 1025:65535 -j DROP $COMMENT
+${PATH_BIN}iptables -I OUTPUT -p udp --sport 53 -m length --length 1025:65535 -j $LOG
+
+${PATH_BIN}iptables -I OUTPUT -p tcp --dport 53 -m length --length 1025:65535 -j DROP $COMMENT
+${PATH_BIN}iptables -I OUTPUT -p tcp --dport 53 -m length --length 1025:65535 -j $LOG
+
+${PATH_BIN}iptables -I OUTPUT -p tcp --sport 53 -m length --length 1025:65535 -j DROP $COMMENT
+${PATH_BIN}iptables -I OUTPUT -p tcp --sport 53 -m length --length 1025:65535 -j $LOG
 }
 
 

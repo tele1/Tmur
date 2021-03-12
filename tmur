@@ -508,6 +508,7 @@ case $1 in
 		echo "         --doc.tmur              info about edit and create rules in ./rules/"	
 		echo "         --doc.iptables          show examples of iptables rules"
 		echo "         --doc.net               example links about internet / network "
+		echo "         --count.char.of.func    this checks that function names do not exceed 29 characters long"
 		echo "	"
 		echo " There are additional options, but don't use them"
 		echo " ( Groups or single rules are easier to sort than all at once. )"
@@ -561,6 +562,21 @@ case $1 in
   ;;
   "--doc.gen.online")
 	cat "$DIR_FIREWALL/doc/doc.gen.online"
+  ;;
+  "--count.char.of.func")
+    while IFS= read -r LINE_FUNC ; do
+        COUNT="$(printf $LINE_FUNC | wc -c)"
+        PRINT_LINE=$(echo "$LINE_FUNC = $(printf $LINE_FUNC | wc -c)")
+        [[ "$COUNT" -gt "29" ]] && FOUND=$(printf "${FOUND}\n${PRINT_LINE}\n")
+    done <<< "${RULES_ALL}"
+    # Remove empty line
+    FOUND=$(grep -v -e '^$' <<< "$FOUND")
+    if [ -z "$FOUND" ] ; then
+        echo "Is fine. Not found too long function names."
+    else
+        echo "Found too long function names:"
+        echo "$FOUND"
+    fi
   ;;
 #------------------------
   *)

@@ -49,11 +49,14 @@ At the moment I do not have an installation script.
 
 
 ## Useful links for tools:
+- Iptables:    <https://netfilter.org/documentation/>
+- Bash:    <http://tldp.org/HOWTO/Bash-Prog-Intro-HOWTO.html>
+
+Example tool for creating graphical user interfaces (GUI) for bash script
 - GtkDialog examples:    <http://xpt.sourceforge.net/techdocs/language/gtkdialog/gtkde02-GtkdialogExamples/single/>
 - GtkDialog tutorial:    <http://murga-linux.com/puppy/viewtopic.php?p=274035#274035>
 - GtkDialog Reference:    <https://github.com/01micko/gtkdialog/blob/wiki/ProjectHome.md>
-- Bash:    <http://tldp.org/HOWTO/Bash-Prog-Intro-HOWTO.html>
-- Iptables:    <https://netfilter.org/documentation/>
+
 
 ## Writing on GitHub For Documents
 * <https://help.github.com/en/categories/writing-on-github>

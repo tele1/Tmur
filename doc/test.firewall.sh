@@ -71,5 +71,9 @@ ping -c4 ${SCAN_IP}
 ## Scan telnet port (port 23)
 nmap -p 23 ${SCAN_IP}
 
+## Monitor packets on eth1 interface (ifconfig)
+tcpdump -i eth1
 
+## Monitor packets <with details> <only numbers> <without checksum> <on eth1 interface> <on port 53>
+tcpdump -vvvv -n -K -i enp2s0 'port 53'
 EOF
