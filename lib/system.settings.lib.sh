@@ -48,8 +48,10 @@ EOF
 	PATH_BIN=""
 	echo "======================"
 	echo " > Hello from ManjaroLinux! :D"
-	echo " > Read this: https://wiki.manjaro.org/index.php?title=iptables "
-	echo " > because firewall don't have iptables.service for systemd. Exiting ..."
+	echo " > Old tutorial: https://wiki.manjaro.org/index.php?title=iptables "
+	echo " > Read this: https://discuss.getsol.us/d/6530-configure-iptables "
+	echo " > because your distribution can be not properly configured "
+	echo " > I mean it don't have iptables.service for systemd. Exiting ..."
 	exit 1					;;
 "PCLinuxOS")
 	PATH_BIN="/sbin/"  
