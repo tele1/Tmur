@@ -4,54 +4,56 @@
 
 
 
-log_v4_localhost() {
+log4_localhost() {
 echo " > $FUNCNAME"
 ## Log rule will work also with other log rules.
 ${PATH_BIN}iptables -I INPUT  -s 127.0.0.1 -j LOG \
 -m limit --limit 1/hour --limit-burst 1 \
---log-prefix "IPTABLES: log_v4_localhost " -m comment --comment "IPTABLES: log_v4_localhost"
+--log-prefix "IPTABLES: log4_localhost " -m comment --comment "IPTABLES: log4_localhost"
 }
 
 
 
 
-log_v4_output() {
+log4_output() {
 echo " > $FUNCNAME"
 ## Log rule will work also with other log rules.
 ${PATH_BIN}iptables -I OUTPUT -j LOG \
 -m limit --limit 1/hour --limit-burst 1 \
---log-prefix "IPTABLES: log_v4_output " -m comment --comment "IPTABLES: log_v4_output"
+--log-prefix "IPTABLES: log4_output " -m comment --comment "IPTABLES: log4_output"
 }
 
 
 
 
-log_v4_input() {
+log4_input() {
 echo " > $FUNCNAME"
 ## Log rule will work also with other log rules.
 ${PATH_BIN}iptables -I INPUT -j LOG \
 -m limit --limit 1/hour --limit-burst 1 \
---log-prefix "IPTABLES: log_v4_input " -m comment --comment "IPTABLES: log_v4_input"
+--log-prefix "IPTABLES: log4_input " -m comment --comment "IPTABLES: log4_input"
 }
 
 
 
 
-log_v4_input2() {
-echo " > $FUNCNAME"
-${PATH_BIN}iptables -I INPUT -p tcp  -m limit --limit 1/hour --limit-burst 1 -j LOG --log-prefix "IPTABLES: log_v4_input2 " -m comment --comment "IPTABLES: log_v4_input21"
-${PATH_BIN}iptables -I INPUT -p udp  -m limit --limit 1/hour --limit-burst 1 -j LOG --log-prefix "IPTABLES: log_v4_input2 " -m comment --comment "IPTABLES: log_v4_input22"
-${PATH_BIN}iptables -I INPUT -p icmp -m limit --limit 1/hour --limit-burst 1 -j LOG --log-prefix "IPTABLES: log_v4_input2 " -m comment --comment "IPTABLES: log_v4_input23"
-${PATH_BIN}iptables -I INPUT -f      -m limit --limit 1/hour --limit-burst 1 -j LOG --log-prefix "IPTABLES: log_v4_input2 " -m comment --comment "IPTABLES: log_v4_input24"
+log4_input2() {
+    echo " > $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+${PATH_BIN}iptables -I INPUT -p tcp  $LOG
+${PATH_BIN}iptables -I INPUT -p udp  $LOG
+${PATH_BIN}iptables -I INPUT -p icmp $LOG
+${PATH_BIN}iptables -I INPUT -f      $LOG
 }
 
 
 
 
-log_v4_INPUT_OUTPUT() {
-echo " > $FUNCNAME"
-${PATH_BIN}iptables -I INPUT  -m limit --limit 1/hour --limit-burst 1 -j LOG --log-prefix "IPTABLES: log_v4_INPUT_OUTPUT " -m comment --comment "IPTABLES: log_v4_INPUT_OUTPUT "
-${PATH_BIN}iptables -I OUTPUT -m limit --limit 1/hour --limit-burst 1 -j LOG --log-prefix "IPTABLES: log_v4_INPUT_OUTPUT " -m comment --comment "IPTABLES: log_v4_INPUT_OUTPUT "
+log4_INPUT_OUTPUT() {
+    echo " > $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+${PATH_BIN}iptables -I INPUT  $LOG
+${PATH_BIN}iptables -I OUTPUT $LOG
 }
 
 

@@ -13,8 +13,6 @@ RD='\e[0;31m' # Red ECHO
 
 #----------------{
 MESSAGE_DEBUG() {
-    #DEBUG="OFF / ON"
-    DEBUG="ON"
     if [[ "$DEBUG" == "ON" ]] ; then
         echo -e "${YW}  DEBUG: $1 ${NC}"
     fi

@@ -1,27 +1,11 @@
 
 
-drop_v4_ack_scan() {
-echo -e " > $FUNCNAME"
+
+drop4_ack_scan() {
 ## PROTECTION BEFORE SCANNING ACK SCAN
-${PATH_BIN}iptables -I INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH ACK -j DROP  \
--m comment --comment "IPTABLES: drop_v4_ack_scan" 
-
-## LOG
-${PATH_BIN}iptables -I INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH ACK -j LOG \
--m limit --limit 1/hour --limit-burst 1 \
---log-prefix "IPTABLES: drop_v4_ack_scan " -m comment --comment "IPTABLES: drop_v4_ack_scan"
-}
-
-
-
-
-
-
-drop_v4_ack_scan_long_long2_long3_long4() {
-echo -e " > $FUNCNAME"
-## PROTECTION BEFORE SCANNING ACK SCAN
-    COMMENT="-j DROP -m comment --comment $FUNCNAME"
-    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPTABLES:${FUNCNAME}:"
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
 ${PATH_BIN}iptables -I INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH ACK $DROP
 ${PATH_BIN}iptables -I INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH ACK $LOG 
@@ -30,48 +14,41 @@ ${PATH_BIN}iptables -I INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,R
 
 
 
-
-drop_v4_fin_scan() {
-echo -e " > $FUNCNAME"
+drop4_fin_scan() {
 ## PROTECTION BEFORE SCANNING FIN SCAN
-${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN -j DROP \
--m comment --comment "IPTABLES: drop_v4_fin_scan" 
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
-## LOG
-# Not logged with {-m conntrack --ctstate NEW} so I will not use them here.
-${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN -j LOG \
--m limit --limit 1/hour --limit-burst 1 \
---log-prefix "IPTABLES: drop_v4_fin_scan " -m comment --comment "IPTABLES: drop_v4_fin_scan"
+# Iptables not logged with {-m conntrack --ctstate NEW} so I will not use them here.
+${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN $DROP
+${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN $LOG
 }
 
 
 
 
-drop_v4_localhost() {
-echo " > $FUNCNAME"
-${PATH_BIN}iptables -I INPUT  -s 127.0.0.1 -j DROP \
--m comment --comment "IPTABLES: drop_v4_localhost" 
+drop4_localhost() {
+    echo " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
-## LOG
-## Log rule will work also with other log rules.
-${PATH_BIN}iptables -I INPUT  -s 127.0.0.1 -j LOG \
---log-prefix "IPTABLES: log1_v4_localhost " -m comment --comment "IPTABLES: drop_v4_localhost"
+${PATH_BIN}iptables -I INPUT  -s 127.0.0.1 $DROP
+${PATH_BIN}iptables -I INPUT  -s 127.0.0.1 $LOG
 }
 
 
 
 
-drop_v4_xmas_scan() {
-echo -e " > $FUNCNAME"
+drop4_xmas_scan() {
 ## PROTECTION BEFORE SCANNING XMAS TREE SCAN
-${PATH_BIN}iptables -I INPUT  -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN,URG,PSH -j DROP \
--m comment --comment "IPTABLES: drop_v4_xmas_scan"
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
-## LOG
-# Not logged with {-m conntrack --ctstate NEW} so I will not use them here.
-${PATH_BIN}iptables -I INPUT  -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN,URG,PSH -j LOG \
--m limit --limit 1/hour --limit-burst 1 \
---log-prefix "IPTABLES: drop_v4_xmas_scan " -m comment --comment "IPTABLES: drop_v4_xmas_scan"
+# Iptables not logged with {-m conntrack --ctstate NEW} so I will not use them here.
+${PATH_BIN}iptables -I INPUT  -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN,URG,PSH  $DROP
+${PATH_BIN}iptables -I INPUT  -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN,URG,PSH  $LOG
 
 # Other:
 # https://github.com/trimstray/iptables-essentials#xmas-packets
@@ -82,69 +59,65 @@ ${PATH_BIN}iptables -I INPUT  -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN,URG
 
 
 
-drop_v4_null_scan() {
-echo -e " > $FUNCNAME"
-# PROTECTION BEFORE NULL SCAN
+drop4_null_scan() {
+## PROTECTION BEFORE NULL SCAN
 ## WARNING: RULE WILL BLOCK WEB BROWSER
-# Not logged with {-m conntrack --ctstate INVALID} so I will not use them here.
-${PATH_BIN}iptables -I INPUT  -p tcp ! --tcp-flags SYN,RST,ACK,FIN,PSH,URG SYN,RST,ACK,FIN,PSH,URG -j DROP -m comment --comment "IPTABLES: drop_v4_null_scan"
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
-## LOG
-# Not logged with {-m conntrack --ctstate INVALID} so I will not use them here.
-${PATH_BIN}iptables -I INPUT  -p tcp ! --tcp-flags SYN,RST,ACK,FIN,PSH,URG SYN,RST,ACK,FIN,PSH,URG -j LOG \
--m limit --limit 1/hour --limit-burst 1 \
---log-prefix "IPTABLES: drop_v4_null_scan " -m comment --comment "IPTABLES: drop_v4_null_scan"
+# Iptables not logged with {-m conntrack --ctstate NEW} so I will not use them here.
+${PATH_BIN}iptables -I INPUT  -p tcp ! --tcp-flags SYN,RST,ACK,FIN,PSH,URG SYN,RST,ACK,FIN,PSH,URG $DROP
+${PATH_BIN}iptables -I INPUT  -p tcp ! --tcp-flags SYN,RST,ACK,FIN,PSH,URG SYN,RST,ACK,FIN,PSH,URG $LOG
 }
 
 
 
 
-drop_v4_ping() {
-echo -e " > $FUNCNAME"
+drop4_ping() {
 # BLOCKING PING
-${PATH_BIN}iptables -I INPUT -p icmp --icmp-type echo-request -j DROP \
--m comment --comment "IPTABLES: drop_v4_ping "
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
-${PATH_BIN}iptables -I INPUT -p icmp --icmp-type 8 -j LOG \
--m limit --limit 1/hour --limit-burst 1 --log-prefix "IPTABLES: drop_v4_ping " --log-level 4 \
--m comment --comment "IPTABLES: drop_v4_ping "
+${PATH_BIN}iptables -I INPUT -p icmp --icmp-type echo-request $DROP
+${PATH_BIN}iptables -I INPUT -p icmp --icmp-type 8            $LOG
 }
 
 
 
 
-drop_v4_telnet() {
-echo -e " > $FUNCNAME"
+drop4_telnet() {
 # BLOCKING TELNET PORT
-${PATH_BIN}iptables -I INPUT -p tcp --dport telnet -j DROP \
--m comment --comment "IPTABLES: drop_v4_telnet in"
-${PATH_BIN}iptables -I INPUT -p tcp --dport telnet -j LOG \
---log-prefix "IPTABLES: drop_v4_telnet in " \
--m comment --comment "IPTABLES: drop_v4_telnet in " -m limit --limit 1/hour --limit-burst 1
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
-${PATH_BIN}iptables -I OUTPUT -p tcp --dport telnet -j DROP \
--m comment --comment "IPTABLES: drop_v4_telnet out"
-${PATH_BIN}iptables -I OUTPUT -p tcp --dport telnet -j LOG \
---log-prefix "IPTABLES: drop_v4_telnet out " \
--m comment --comment "IPTABLES: drop_v4_telnet out " -m limit --limit 1/hour --limit-burst 1
+${PATH_BIN}iptables -I INPUT  -p tcp --dport telnet $DROP
+${PATH_BIN}iptables -I INPUT  -p tcp --dport telnet $LOG
+${PATH_BIN}iptables -I OUTPUT -p tcp --dport telnet $DROP
+${PATH_BIN}iptables -I OUTPUT -p tcp --dport telnet $LOG 
 }
 
 
 
 
-drop_v4_invalid() {
-echo -e " > $FUNCNAME"
+drop4_invalid() {
 # BLOCKING INVALID PACKAGES
-${PATH_BIN}iptables -I INPUT  -m state --state INVALID -j DROP
-${PATH_BIN}iptables -I INPUT  -m state --state INVALID -j LOG --log-prefix "IPTABLES: drop_v4_invalid in "  --log-ip-options --log-tcp-options
-${PATH_BIN}iptables -I OUTPUT -m state --state INVALID -j DROP
-${PATH_BIN}iptables -I OUTPUT -m state --state INVALID -j LOG --log-prefix "IPTABLES: drop_v4_invalid out " --log-ip-options --log-tcp-options
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}: --log-ip-options --log-tcp-options"
+
+${PATH_BIN}iptables -I INPUT  -m state --state INVALID $DROP
+${PATH_BIN}iptables -I INPUT  -m state --state INVALID $LOG 
+${PATH_BIN}iptables -I OUTPUT -m state --state INVALID $DROP
+${PATH_BIN}iptables -I OUTPUT -m state --state INVALID $LOG 
 }
 
 
 
 
-#drop_v4_spoofing() {
+#drop4_spoofing() {
 #echo -e " > $FUNCNAME"
 ## ANTY-SPOOFING
 #${PATH_BIN}iptables -I INPUT -i $ETH -s ! 192.168.1.0/24 -j LOG --log-prefix "INPUT SPOOFED PKT "
@@ -163,19 +136,26 @@ ${PATH_BIN}iptables -I OUTPUT -m state --state INVALID -j LOG --log-prefix "IPTA
 
 
 
-drop_v4_null() {
-echo -e " > $FUNCNAME"
+drop4_null() {
 # Drop all NULL packets
-${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags ALL NONE -j DROP
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+
+${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags ALL NONE $DROP
+${PATH_BIN}iptables -I INPUT -p tcp --tcp-flags ALL NONE $LOG 
 }
 
 
 
 
-drop_v4_bruteforce_ssh() {
-echo -e " > $FUNCNAME"
-${PATH_BIN}iptables -I INPUT -p tcp --dport 22 -i $ETH -m state --state NEW -m recent --set
-${PATH_BIN}iptables -I INPUT -p tcp --dport 22 -i $ETH -m state --state NEW -m recent  --update --seconds 60 --hitcount 4 -j DROP
+drop4_bruteforce_ssh() {
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+
+${PATH_BIN}iptables -I INPUT -p tcp --dport 22  -m state --state NEW -m recent --set
+${PATH_BIN}iptables -I INPUT -p tcp --dport 22  -m state --state NEW -m recent  --update --seconds 60 --hitcount 4 $DROP
 # will block an IP if it attempts more than 3 connections per minute to SSH
 # https://www.rackaid.com/blog/how-to-block-ssh-brute-force-attacks/
 }
@@ -183,10 +163,13 @@ ${PATH_BIN}iptables -I INPUT -p tcp --dport 22 -i $ETH -m state --state NEW -m r
 
 
 
-drop_v4_ident() {
-echo -e " > $FUNCNAME"
+drop4_ident() {
 # To prevent ICMP unreachable packets being sent
-${PATH_BIN}iptables -I OUTPUT -p icmp --icmp-type destination-unreachable -j DROP
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+
+${PATH_BIN}iptables -I OUTPUT -p icmp --icmp-type destination-unreachable $DROP
 # Protection against attack IDENT i SOCK SCANNING 
 ${PATH_BIN}iptables -I INPUT -p tcp --dport 113 -j REJECT --reject-with icmp-port-unreachable
 ${PATH_BIN}iptables -I INPUT -p tcp --dport 1080 -j REJECT --reject-with icmp-port-unreachable
@@ -195,11 +178,14 @@ ${PATH_BIN}iptables -I INPUT -p tcp --dport 1080 -j REJECT --reject-with icmp-po
 
 
 
-drop_v4_scan() {
-echo -e " > $FUNCNAME"
+drop4_scan() {
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+
 # Anyone who scans us will be blocked for a whole day:
-${PATH_BIN}iptables -I INPUT   -m recent --name portscan --rcheck --seconds 86400 -j DROP
-${PATH_BIN}iptables -I FORWARD -m recent --name portscan --rcheck --seconds 86400 -j DROP
+${PATH_BIN}iptables -I INPUT   -m recent --name portscan --rcheck --seconds 86400 $DROP
+${PATH_BIN}iptables -I FORWARD -m recent --name portscan --rcheck --seconds 86400 $DROP
 # After a day, it will be removed from the "scan list"
 ${PATH_BIN}iptables -I INPUT   -m recent --name portscan --remove
 ${PATH_BIN}iptables -I FORWARD -m recent --name portscan --remove
@@ -208,31 +194,30 @@ ${PATH_BIN}iptables -I FORWARD -m recent --name portscan --remove
 
 
 
-drop_v4_from_list_scaners() {
-echo -e " > $FUNCNAME"
-# Regoly, ktore dodaja skanujacych do “ listy skanerow “ I zapisuja proby skanow:
-${PATH_BIN}iptables -I INPUT   -p tcp -m tcp --dport 139 \
-    -m recent --name portscan --set -j LOG --log-prefix "Portscan:"
-${PATH_BIN}iptables -I INPUT   -p tcp -m tcp --dport 139 \
-    -m recent --name portscan --set -j DROP
+drop4_from_list_scaners() {
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
-${PATH_BIN}iptables -I FORWARD -p tcp -m tcp --dport 139 \
-    -m recent --name portscan --set -j LOG --log-prefix "Portscan:"
-${PATH_BIN}iptables -I FORWARD -p tcp -m tcp --dport 139 \
-    -m recent --name portscan --set -j DROP
+# Rules which add scanners to the "scanner list" and save scan attempts:
+${PATH_BIN}iptables -I INPUT   -p tcp -m tcp --dport 139 -m recent --name portscan --set $DROP
+${PATH_BIN}iptables -I INPUT   -p tcp -m tcp --dport 139 -m recent --name portscan --set $LOG
+
+${PATH_BIN}iptables -I FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set $DROP
+${PATH_BIN}iptables -I FORWARD -p tcp -m tcp --dport 139 -m recent --name portscan --set $LOG
 }
 
 
 
 
-drop_v4_unclean() {
+drop4_unclean() {
 echo -e " > $FUNCNAME"
 # Dropping atypical packets ( Experimental module “unclean” )
 echo " This is Experimental module “unclean”"
 ${PATH_BIN}iptables -I INPUT -j DROP -m unclean
 }
 
-drop_v4_hole_1() {
+drop4_hole_1() {
 echo -e " > $FUNCNAME"
 # Closing the gap in ${PATH_BIN}iptables # 
 ${PATH_BIN}iptables -I OUTPUT -m state -p icmp --state INVALID -j DROP
@@ -241,7 +226,7 @@ ${PATH_BIN}iptables -I OUTPUT -m state -p icmp --state INVALID -j DROP
 
 
 
-drop_v4_upnp() {
+drop4_upnp() {
 echo " > $FUNCNAME"
 ${PATH_BIN}iptables -I INPUT -p tcp --sport 2869 -j DROP \
 -m comment --comment "drop_upnp" 
@@ -259,34 +244,33 @@ ${PATH_BIN}iptables -I INPUT -p udp --sport 1900 -j DROP \
 
 
 
-drop_v4_cups() {
-echo " > $FUNCNAME"
-${PATH_BIN}iptables -I INPUT -p tcp --sport 631 -j REJECT \
--m comment --comment "drop_cups" 
-${PATH_BIN}iptables -I INPUT -p udp --sport 631 -j REJECT \
--m comment --comment "drop_cups" 
-${PATH_BIN}iptables -I OUTPUT -p tcp --dport 631 -j REJECT \
--m comment --comment "drop_cups" 
-${PATH_BIN}iptables -I OUTPUT -p udp --dport 631 -j REJECT \
--m comment --comment "drop_cups" 
+drop4_cups() {
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+
+${PATH_BIN}iptables -I INPUT  -p tcp --sport 631 $DROP
+${PATH_BIN}iptables -I INPUT  -p udp --sport 631 $DROP
+${PATH_BIN}iptables -I OUTPUT -p tcp --dport 631 $DROP
+${PATH_BIN}iptables -I OUTPUT -p udp --dport 631 $DROP
 }
 
 
 
 
-drop_v4_low_MSS() {
+drop4_low_MSS() {
 echo " > $FUNCNAME"
 ## block connections with low MSSs
 ## https://github.com/Netflix/security-bulletins/blob/master/advisories/third-party/2019-001.md
 ## https://github.com/Netflix/security-bulletins/blob/master/advisories/third-party/2019-001/block-low-mss/iptables.txt
 ${PATH_BIN}iptables -I INPUT -p tcp -m tcpmss --mss 1:500 -j DROP
-${PATH_BIN}ip6tables -I INPUT -p tcp -m tcpmss --mss 1:500 -j DROP
+##${PATH_BIN}ip6tables -I INPUT -p tcp -m tcpmss --mss 1:500 -j DROP
 }
 
 
 
 
-drop_v4_DNS_Tunneling() {
+drop4_DNS_Tunneling() {
 echo " > $FUNCNAME"
 ## NOT TESTED YET, but you can test :)
 ##  https://www.youtube.com/watch?v=q3dPih_8Cro
@@ -312,51 +296,48 @@ ${PATH_BIN}iptables -I OUTPUT -p tcp --sport 53 -m length --length 1025:65535 -j
 
 
 
-drop_v4_ddos() {
-echo -e " > $FUNCNAME"
+drop4_ddos() {
 # PROTECTION BEFORE ATTACK Dos
-# I don't know if it works 
-${PATH_BIN}iptables -I INPUT -m conntrack --ctstate INVALID -p tcp ! --tcp-flags SYN,RST,ACK,FIN,PSH,URG SYN,RST \
--m comment --comment "protection before DDOS"
-${PATH_BIN}iptables -N syn-flood \
--m comment --comment "protection before DDOS"
-${PATH_BIN}iptables -I INPUT -p tcp --syn -j syn-flood \
--m comment --comment "protection before DDOS"
-${PATH_BIN}iptables -I syn-flood -m limit --limit 1/s --limit-burst 4 -j RETURN \
--m comment --comment "protection before DDOS"
-${PATH_BIN}iptables -I syn-flood -m limit --limit 1/s --limit-burst 4 -j LOG --log-prefix "IPTABLES: SYN-flood " \
--m comment --comment "protection before DDOS"
-${PATH_BIN}iptables -I syn-flood -j DROP \
--m comment --comment "protection before DDOS"
+# I don't know how it works 
+    echo -e " > $FUNCNAME"
+    COMMENT="-m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/s --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+
+${PATH_BIN}iptables -I INPUT -m conntrack --ctstate INVALID -p tcp ! --tcp-flags SYN,RST,ACK,FIN,PSH,URG SYN,RST $COMMENT
+${PATH_BIN}iptables -N syn-flood $COMMENT
+${PATH_BIN}iptables -I INPUT -p tcp --syn -j syn-flood $COMMENT
+${PATH_BIN}iptables -I syn-flood -m limit --limit 1/s --limit-burst 4 -j RETURN $COMMENT
+${PATH_BIN}iptables -I syn-flood $LOG
+${PATH_BIN}iptables -I syn-flood -j DROP $COMMENT
 }
 
 
 
 
-drop_v4_ping_death() {
-echo -e " > $FUNCNAME"
+drop4_ping_death() {
 # PROTECTION BEFORE ATTACK PING OF DEATH 
+    echo -e " > $FUNCNAME"
+    ACCEPT="-j ACCEPT -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/s --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+
 # "To protect some really old equipment. For new devices probably is unnecessary."
 # limits the number of pings 
-${PATH_BIN}iptables -I INPUT -p icmp --icmp-type echo-request -m limit --limit 1/s -j ACCEPT \
--m comment --comment "IPTABLES: drop_v4_ping_death "  
-
-${PATH_BIN}iptables -I INPUT -p icmp --icmp-type echo-request -m limit --limit 1/s -j LOG \
---log-prefix "IPTABLES: drop_v4_ping_death " -m comment --comment "IPTABLES: drop_v4_ping_death "
+${PATH_BIN}iptables -I INPUT -p icmp --icmp-type echo-request -m limit --limit 1/s $ACCEPT
+${PATH_BIN}iptables -I INPUT -p icmp --icmp-type echo-request $LOG
 }
 
 
 
 
-drop_v4_ping_death_v2() {
-echo -e " > $FUNCNAME"
+drop4_ping_death_v2() {
 # PROTECTION BEFORE ATTACK PING OF DEATH 
-# "To protect some really old equipment. For new devices probably is unnecessary."
-${PATH_BIN}iptables -I INPUT -p icmp -f -j DROP \
--m comment --comment "IPTABLES: drop_v4_ping_death "  
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
 
-${PATH_BIN}iptables -I INPUT -p icmp -f -j LOG \
---log-prefix "IPTABLES: drop_v4_ping_death " -m comment --comment "IPTABLES: drop_v4_ping_death "
+# "To protect some really old equipment. For new devices probably is unnecessary."
+${PATH_BIN}iptables -I INPUT -p icmp -f $DROP
+${PATH_BIN}iptables -I INPUT -p icmp -f $LOG
 
 # Yet another way 
 #https://blacksaildivision.com/secure-iptables-rules-centos
@@ -365,13 +346,14 @@ ${PATH_BIN}iptables -I INPUT -p icmp -f -j LOG \
 
 
 
-drop_v4_fragments() {
-echo -e " > $FUNCNAME"
+drop4_fragments() {
 # Packets with incoming fragments drop them.
-${PATH_BIN}iptables -I INPUT -f -j DROP
-${PATH_BIN}iptables -I INPUT -f -j LOG \
--m limit --limit 1/hour --limit-burst 1 \
---log-prefix "IPTABLES: drop_v4_fragments " -m comment --comment "IPTABLES: drop_v4_fragments"
+    echo -e " > $FUNCNAME"
+    DROP="-j DROP -m comment --comment $FUNCNAME"
+    LOG="-j LOG -m limit --limit 1/hour --limit-burst 1 --log-prefix IPT:${FUNCNAME}:"
+
+${PATH_BIN}iptables -I INPUT -f $DROP
+${PATH_BIN}iptables -I INPUT -f $LOG
 }
 
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #       Name: Firewall TMur
-#       Version:  1 Beta
+#       Version:  2 Beta
 #       License: GNU GPL v3  https://www.gnu.org/licenses/gpl-3.0.en.html
 #       Destiny: Script for easy management of the iptables firewall.
 #       Using the script from root:     bash tmur --help
@@ -12,8 +12,11 @@
 [[ $EUID -ne 0 ]] && echo -e "'\e[0;31m' This script must be run as root. '\e[0m'" && exit 1
 
 # Relative path for read rules
-DIR_FIREWALL="$(dirname "$(readlink -f "$0")")"
-#echo "$DIR_FIREWALL"
+DIR_FIREWALL="$(dirname "$(readlink -f "$0")")"     # ;echo "$DIR_FIREWALL"
+
+# Switch if you need: DEBUG="OFF" / DEBUG="ON"
+DEBUG="OFF"     
+
 # Load rules
 . "$DIR_FIREWALL/rules/rules_drop_ipv4.sh"
 . "$DIR_FIREWALL/rules/rules_accept_ipv4.sh"
@@ -137,14 +140,12 @@ check() {
 }
 
 for_server_v4() {
-echo -e " > $FUNCNAME"
+    echo -e " > $FUNCNAME"
+    # COMMENT="-m comment --comment Default_policy_for_server_v4"
 if ${PATH_BIN}ifconfig | grep -q "inet " ; then 
-    ${PATH_BIN}iptables -P INPUT DROP \
-    -m comment --comment "Default policy for_server_v4"
-    ${PATH_BIN}iptables -P FORWARD DROP \
-    -m comment --comment "Default policy for_server_v4"
-    ${PATH_BIN}iptables -P OUTPUT DROP \
-    -m comment --comment "Default policy for_server_v4"
+    ${PATH_BIN}iptables -P INPUT   DROP 
+    ${PATH_BIN}iptables -P FORWARD DROP 
+    ${PATH_BIN}iptables -P OUTPUT  DROP 
 else
 	if lsmod | grep -q ipv4 ; then
 		MESSAGE_ERROR "IPv4 is not active, but ipv4 module still running."
@@ -155,14 +156,12 @@ fi
 }
 
 for_server_v6() {
-echo -e " > $FUNCNAME"
+    echo -e " > $FUNCNAME"
+    # COMMENT="-m comment --comment Default_policy_for_server_v6"
 if ${PATH_BIN}ifconfig | grep -q inet6 ; then 
-	${PATH_BIN}ip6tables -P INPUT DROP \
-	-m comment --comment "Default policy for_server_v6"
-	${PATH_BIN}ip6tables -P FORWARD DROP \
-	-m comment --comment "Default policy for_server_v6"
-	${PATH_BIN}ip6tables -P OUTPUT DROP \
-	-m comment --comment "Default policy for_server_v6"
+	${PATH_BIN}ip6tables -P INPUT   DROP
+	${PATH_BIN}ip6tables -P FORWARD DROP
+	${PATH_BIN}ip6tables -P OUTPUT  DROP
 else
 	if lsmod | grep -q ipv6 ; then
 		MESSAGE_ERROR "IPv6 is not active, but ipv6 module still running."
@@ -173,18 +172,14 @@ fi
 }
 
 for_desktop_v4() {
-echo -e " > $FUNCNAME"
+    echo -e " > $FUNCNAME"
+    COMMENT="-m comment --comment Default_policy_desktop_v4"
 if ${PATH_BIN}ifconfig | grep -q "inet " ; then
-    ${PATH_BIN}iptables -P INPUT DROP \
-    -m comment --comment "Default policy for_desktop_v4"
-    ${PATH_BIN}iptables -P FORWARD DROP \
-    -m comment --comment "Default policy for_desktop_v4"
-    ${PATH_BIN}iptables -P OUTPUT ACCEPT \
-    -m comment --comment "Default policy for_desktop_v4"
-            ${PATH_BIN}iptables -A INPUT -i lo -j ACCEPT  \
-            -m comment --comment "Default policy for_desktop_v4"
-            ${PATH_BIN}iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT \
-            -m comment --comment "Default policy for_desktop_v4"
+    ${PATH_BIN}iptables -P INPUT   DROP
+    ${PATH_BIN}iptables -P FORWARD DROP
+    ${PATH_BIN}iptables -P OUTPUT  ACCEPT
+            ${PATH_BIN}iptables -A INPUT -i lo -j ACCEPT $COMMENT
+            ${PATH_BIN}iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT $COMMENT
             ##${PATH_BIN}iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
             ##${PATH_BIN}iptables -A INPUT -p icmp --icmp-type 8 -j LOG --log-prefix "PING: " --log-level 4
             ##${PATH_BIN}iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
@@ -200,18 +195,14 @@ fi
 }
 
 for_desktop_v6() {
-echo -e " > $FUNCNAME"
+    echo -e " > $FUNCNAME"
+    COMMENT="-m comment --comment Default_policy_desktop_v6"
 if ${PATH_BIN}ifconfig | grep -q inet6 ; then 
-	${PATH_BIN}ip6tables -P INPUT DROP \
-	-m comment --comment "Default policy for_desktop_v6"
-	${PATH_BIN}ip6tables -P FORWARD DROP \
-	-m comment --comment "Default policy for_desktop_v6"
-	${PATH_BIN}ip6tables -P OUTPUT ACCEPT \
-	-m comment --comment "Default policy for_desktop_v6"
-            ${PATH_BIN}ip6tables -A INPUT -i lo -j ACCEPT \
-	        -m comment --comment "Default policy for_desktop_v6"
-            ${PATH_BIN}ip6tables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT \
-	        -m comment --comment "Default policy for_desktop_v6"
+	${PATH_BIN}ip6tables -P INPUT DROP
+	${PATH_BIN}ip6tables -P FORWARD DROP
+	${PATH_BIN}ip6tables -P OUTPUT ACCEPT
+            ${PATH_BIN}ip6tables -A INPUT -i lo -j ACCEPT $COMMENT
+            ${PATH_BIN}ip6tables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT $COMMENT
 else
 	if lsmod | grep -q ipv6 ; then
 		MESSAGE_ERROR "IPv6 is not active, but ipv6 module still running."
@@ -235,7 +226,7 @@ fi
 }
 
 # For show all rules in help
-RULES_ALL="$(compgen -A function | grep  "^accept\|^drop\|^log" | sort)"
+RULES_ALL="$(compgen -A function | grep  "^acpt\|^drop\|^log" | sort)"
 #MESSAGE_DEBUG "$RULES_ALL"
 #========================================================================================={
 case $1 in
@@ -366,6 +357,9 @@ case $1 in
   "-laam")
 	ls /lib/modules/`uname -r`/kernel/net/netfilter/
   ;;
+  "-lar")
+		echo "$RULES_ALL" | column
+  ;;
 #------------------------
   "--export.v4")
 		## If variable is empty
@@ -447,11 +441,8 @@ case $1 in
   "--numbers")
 	"${PATH_BIN}"iptables -L --line-numbers -n
   ;;
-  "-n"|"--nmap")
-	. "$DIR_FIREWALL/doc/test.firewall.sh"
-  ;;
   "--syslog")
-	grep "IPTABLES:" /var/log/syslog
+	grep "IPT:" /var/log/syslog
   ;;
   "--rtlog")
     tail -f /var/log/syslog
@@ -465,7 +456,7 @@ case $1 in
 		echo "usage: $0 --option rules"
 		echo " "
 		echo "for example:"
-		echo " ./script for_server drop_invalid accept_web_browser"
+		echo " ./script for_server drop_invalid acpt_web_browser"
 		echo "	"
 		echo "----------------------------------------------------------------------------"
 		echo "== Available Options: == " 
@@ -485,6 +476,7 @@ case $1 in
 		echo "   -lalm4                        List all loaded modules IPv4"
 		echo "   -lalm6                        List all loaded modules IPv6"
 		echo "   -laam                         List all available netfilter modules"
+		echo "   -lar                          List all rules"
 		echo "	"
 		echo "         --export.v4             export active IPv4 rules to file"
 		echo "         --export.v6             export active IPv6 rules to file"
@@ -498,24 +490,26 @@ case $1 in
 		echo "   -c    --check                 show iptables, netstat and status"
 		echo "   -if   --ifconfig              short form ifconfig"
 		echo "         --numbers               show IPv4 rules with line numbers"
-		echo "   -n    --nmap                  show examples with nmap to scan firewall"
 		echo "         --syslog                show iptables logs from syslog"
 		echo "         --rtlog                 show syslog log in real time (Press Ctrl+C to exit)"
 		echo "         --clrlog                remove lines containing the word IPTABLES: from syslog (After this you will need reboot system)"
 		echo "	"
-		echo " Other:"
-		echo "   -h    --help                  show help"
-		echo "         --doc.tmur              info about edit and create rules in ./rules/"	
+		echo " Documentation:"
+		echo "         --doc.rules             info about edit and create rules in ./rules/ folder for tmur"	
 		echo "         --doc.iptables          show examples of iptables rules"
 		echo "         --doc.net               example links about internet / network "
+		echo "   -n    --doc.nmap              show examples with nmap to scan firewall"
+		echo "	"
+		echo " Other:"
+		echo "   -h    --help                  show help"
 		echo "         --count.char.of.func    this checks that function names do not exceed 29 characters long"
 		echo "	"
-		echo " There are additional options, but don't use them"
-		echo " ( Groups or single rules are easier to sort than all at once. )"
-		echo " edit files in ./rules/ instead use this options: "
+		echo " There are additional options, but don't use them. They can cause problems."
+		echo " ( Groups or single rules are easier to sort than all at once. That's why I don't use. )"
+		echo " edit and create own rules in ./rules/ instead use this options: "
 		echo "         --block.v4 IP            add rule with block IPv4, IP you need write"
 		echo "         --block.range.v4 IP IP   add rule to block range from IPv4 to IPv4"
-		echo "         --doc.gen.online         Sample generators online for iptables."
+		echo "         --doc.generators         sample links to generators online for iptables."
 		echo "	"
 		echo "----------------------------------------------------------------------------"
 		echo "== Available rules for option \"add\" or \"remove\":" 
@@ -551,31 +545,45 @@ case $1 in
 		echo "	"
 		echo "==             =="
   ;;
-  "--doc.tmur")
-	cat "$DIR_FIREWALL/doc/doc.tmur"
+  "--doc.rules")
+	cat "$DIR_FIREWALL/doc/creating.rules.txt"
   ;;
   "--doc.iptables")
-	cat "$DIR_FIREWALL/doc/doc.iptables"
+	cat "$DIR_FIREWALL/doc/example.rules.iptables.txt"
   ;;
   "--doc.net")
-	cat "$DIR_FIREWALL/doc/doc.net"
+	cat "$DIR_FIREWALL/doc/links.about.network.txt"
   ;;
-  "--doc.gen.online")
-	cat "$DIR_FIREWALL/doc/doc.gen.online"
+  "-n"|"--doc.nmap")
+	. "$DIR_FIREWALL/doc/test.firewall.sh"
+  ;;
+  "--doc.generators")
+	cat "$DIR_FIREWALL/doc/links.to.generators.txt"
   ;;
   "--count.char.of.func")
     while IFS= read -r LINE_FUNC ; do
         COUNT="$(printf $LINE_FUNC | wc -c)"
         PRINT_LINE=$(echo "$LINE_FUNC = $(printf $LINE_FUNC | wc -c)")
-        [[ "$COUNT" -gt "29" ]] && FOUND=$(printf "${FOUND}\n${PRINT_LINE}\n")
+        # 29
+        [[ "$COUNT" -gt "29" ]] && FOUND_1=$(printf "${FOUND_1}\n${PRINT_LINE}\n")
+        # 29 - 5 = 24   ("IPT:function:" - "function" = 5)
+        [[ "$COUNT" -gt "24" ]] && FOUND_2=$(printf "${FOUND_2}\n${PRINT_LINE}\n")
     done <<< "${RULES_ALL}"
-    # Remove empty line
-    FOUND=$(grep -v -e '^$' <<< "$FOUND")
-    if [ -z "$FOUND" ] ; then
-        echo "Is fine. Not found too long function names."
-    else
+
+        # Remove empty line
+        FOUND_1=$(grep -v -e '^$' <<< "$FOUND_1")
+            MESSAGE_DEBUG "FOUND_1 = $FOUND_1"
+        FOUND_2=$(grep -v -e '^$' <<< "$FOUND_2")
+            MESSAGE_DEBUG "FOUND_2 = $FOUND_2"
+
+    if [ ! -z "$FOUND_1" ] ; then
         echo "Found too long function names:"
-        echo "$FOUND"
+        echo "$FOUND_1"
+    elif [ ! -z "$FOUND_2" ] ; then
+        echo "Found too long function names for logs:"
+        echo "$FOUND_2"
+    else
+        echo "Is fine. Not found too long function names."
     fi
   ;;
 #------------------------

@@ -1,0 +1,79 @@
+
+    ==    Rules Construction:    ==
+
+    1. Iptables working like "small marble machine" , with switch track
+        "ACCEPT, DROP, REJECT " remember about it, when you sort / choose the rules.
+        It is very important for the operation of the rules.
+
+        For example when you set:
+            " iptables -I INPUT -s 127.0.0.1 -j DROP "
+            " iptables -I INPUT -s 127.0.0.1 -j LOG "
+        From output "iptables -S" you will see:
+                  " -A INPUT -s 127.0.0.1/32 -j LOG  "
+                  " -A INPUT -s 127.0.0.1/32 -j DROP "
+
+        For example when you set:
+            " iptables -A INPUT -s 127.0.0.1 -j LOG "
+            " iptables -A INPUT -s 127.0.0.1 -j DROP "
+        From output "iptables -S" you will see:
+                  " -A INPUT -s 127.0.0.1/32 -j LOG  "
+                  " -A INPUT -s 127.0.0.1/32 -j DROP "
+
+        And this is correct because if the connection is first rejected then it can not be logged. 
+        In a similar way, you can create a hole in the firewall for uninvited guests.
+        So always check " iptables -S " output.
+        More documentation about iptables in  https://netfilter.org/documentation/
+
+    2. Rules with name "drop_" usually are first load in iptables, for protection,
+        and they contain option "-I" 
+
+    3. Rules with name "acpt_" are load at the end,
+        and have added option "-A" 
+
+    4. Always try to create the necessary rules first and test in a virtual machine.
+        Because I cannot be responsible for errors if for you something  will works differently.
+        Because some rules are copied from the internet and I not tested. 
+
+    5. The rules have been specially divided into files for better transparency.
+        rules_accept_ipv4.sh
+        rules_drop_ipv4.sh
+        rules_log_ipv4.sh
+
+    6. The name ipv4 is intended to distinguish between ipv4 and ipv6 rules.
+
+    7. Each set of rules is built into functions and described.
+
+    8. Relative path for files has been added for security. 
+
+    9. Failure to respect the "acpt_" "drop_" "log_"
+        names may cause the script to malfunction
+
+    10. The length of the function name in ./rules/
+        The maximum value of characters for --log-prefix and --comment in rules for iptables is 29.
+        Therefore, some names have been intentionally shortened:
+            IPT: = IPTABLES:
+            drop4  = drop rule for IPv4
+            acpt4 = accept rule for IPv4
+            desk = desktop / client rule
+            serv = server rule
+        So if you will use "$FUNCNAME" variable in own rules of iptables, then 
+        you can gain 13 free characters for your own unique function name.
+            Example:    IPT:acpt4_desk_1234567890123:
+        Sometimes will more possible characters ( 19 free characters )
+            Example:    IPT:log4_1234567890123456789:
+        Please do not exceed this value for own function.
+        Because if a comment will too long, then iptables will only use the beginning of comment.
+        I created --count.char.of.func option which allow you to check the length of the function name.
+
+    11. If iptables rules use variables, then they usually are without quotes.
+        Iptables doesn't like quotes.
+
+    13. I resigned from adding simultaneously --log-prefix and --comment for log rules.
+        --log-prefix is enough for logs and output of "iptables -S".
+
+    14. KIS - Keep It Simple. Keep your code simple and readable if possible. 
+
+
+    PLEASE, ADAPT THE ABOVE CONSTRUCTION,
+    TO YOUR OWN RULES, IF YOU WANT ADD.
+    ========================================================

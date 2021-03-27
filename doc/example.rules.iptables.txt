@@ -24,9 +24,11 @@ iptables -I INPUT  -s 127.0.0.1 -j DROP
 
 #--------------------------------
 ####
-##  List of all modules:
+##  List all modules of iptables:
 ##  http://ipset.netfilter.org/iptables-extensions.man.html
+##
 ##  http://www.netfilter.org/documentation/HOWTO/packet-filtering-HOWTO-7.html
+##
 ##  For more documentation look on this page http://www.netfilter.org/
 ####
 

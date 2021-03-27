@@ -7,16 +7,6 @@ LINUX_DISTRIBUTION=$(lsb_release -is)
 
 # Set path for bin
 case "$LINUX_DISTRIBUTION" in
-"UPLOS")
-	PATH_BIN="/sbin/"    	
-	system_iptables_save() {
-	${PATH_BIN}service iptables save
-	}						;;
-"PCLinuxOS")
-	PATH_BIN="/sbin/"  
-	system_iptables_save() {
-	${PATH_BIN}service iptables save
-	}						;;
 "Debian")
 	PATH_BIN=""
 	# test if package is installed
@@ -36,17 +26,11 @@ EOF
 	chmod 510 /etc/network/if-pre-up.d/iptables
 	}	
 	;;
-"ManjaroLinux")
-	PATH_BIN=""
-	echo "======================"
-	echo " > Hello from ManjaroLinux! :D"
-	echo " > Read this: https://wiki.manjaro.org/index.php?title=iptables "
-	echo " > because firewall don't have iptables.service for systemd. Exiting ..."
-	exit 1					;;
 "Linuxmint")
+    # Wiki:     https://help.ubuntu.com/community/IptablesHowTo
     # List all services:
-    # service --status-all
-    # systemctl --type=service
+    #       service --status-all
+    #       systemctl --type=service
     # Probably iptables running from ufw service
 	PATH_BIN=""
 	system_iptables_save() {
@@ -60,6 +44,33 @@ EOF
     ## To check log if firewall not was restored you can use command in terminal:  grep "/etc/network/if-pre-up.d/iptables" /var/log/syslog 
 	}
     ;;
+"ManjaroLinux")
+	PATH_BIN=""
+	echo "======================"
+	echo " > Hello from ManjaroLinux! :D"
+	echo " > Read this: https://wiki.manjaro.org/index.php?title=iptables "
+	echo " > because firewall don't have iptables.service for systemd. Exiting ..."
+	exit 1					;;
+"PCLinuxOS")
+	PATH_BIN="/sbin/"  
+	system_iptables_save() {
+	${PATH_BIN}service iptables save
+	}						;;
+"Solus")
+	PATH_BIN="/sbin/" 
+	echo "======================"
+	echo " > Hello Solus! :D"
+	echo " > Read this: https://discuss.getsol.us/d/6530-configure-iptables "
+	echo " > because your distribution is not properly configured "
+	echo " > I mean it don't have iptables.service for systemd. Exiting ..."
+	exit 1					;;
+    ;;
+"UPLOS")
+	PATH_BIN="/sbin/"    	
+	system_iptables_save() {
+	${PATH_BIN}service iptables save
+	}						;;
+
 *)
 	PATH_BIN=""
 	echo "======================"
