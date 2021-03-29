@@ -1,10 +1,10 @@
 # Tmur
-It is a command line tool to help you manage your **iptables** rules of the Linux kernel firewall. 
+It is a command line tool to help you manage your **iptables** rules of the Linux kernel firewall.  
 It allows switching between ready-made iptables rulesets.
 
-Please do not confuse with the successor of iptables --> nftables.
-This software does not support nftables.
-So, before using this software, check first what your system using by default.
+Please do not confuse with the successor of iptables --> nftables.  
+This software does not support nftables.  
+So, before using this software, check first what your system using by default.  
 
 
 ## Release
@@ -12,11 +12,10 @@ So, before using this software, check first what your system using by default.
        Version:  3 Beta
        License: GNU GPL v3  https://www.gnu.org/licenses/gpl-3.0.en.html
 
-I do not guarantee that the program will always run properly on all systems. 
-Operating systems have minor differences that I tried to include in **/lib/system.settings.lib.sh**
-If you want to use this tool and not working, 
-* report bugs, **<https://github.com/tele1/Tmur/issues>**
-* support development.
+I do not guarantee that the program will run properly on all systems.  
+Operating systems have minor differences that I tried to include in **/lib/system.settings.lib.sh**  
+If you want use this tool and not working,  
+* report bugs, **<https://github.com/tele1/Tmur/issues>**  
 
 
 ## Dependencies for tmur:
