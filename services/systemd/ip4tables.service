@@ -1,0 +1,13 @@
+[Unit] 
+Description=IPv4 Packet Filtering Framework 
+Before=network-pre.target 
+Wants=network-pre.target 
+ 
+[Service] 
+Type=oneshot 
+ExecStart=PATH_TO_IPT_BINiptables-restore   /etc/iptables/ip4tables.rules 
+ExecReload=PATH_TO_IPT_BINiptables-restore  /etc/iptables/ip4tables.rules 
+RemainAfterExit=yes 
+ 
+[Install] 
+WantedBy=multi-user.target

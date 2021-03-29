@@ -9,16 +9,8 @@ So, before using this software, check first what your system using by default.
 
 ## Release
        Name: Firewall TMur
-       Version:  1 Beta
+       Version:  3 Beta
        License: GNU GPL v3  https://www.gnu.org/licenses/gpl-3.0.en.html
-
-## Tested on operating systems:
-
-* Debian
-* Linux Mint
-* PCLinuxOS
-* Uplos Linux
-* ManjaroLinux
 
 I do not guarantee that the program will always run properly on all systems. 
 Operating systems have minor differences that I tried to include in **/lib/system.settings.lib.sh**

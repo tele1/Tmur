@@ -1,5 +1,11 @@
 
 
 
-1. Remove file for systemd after remove tmur
-2. Test Solus OS
+
+- Upgrade install.uninstall.sh
+- Add a dependency list to scripts 
+- Upgrade services/README.md
+
+
+
+

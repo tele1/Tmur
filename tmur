@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #       Name: Firewall TMur
-#       Version:  2 Beta
+#       Version:  3 Beta
 #       License: GNU GPL v3  https://www.gnu.org/licenses/gpl-3.0.en.html
 #       Destiny: Script for easy management of the iptables firewall.
 #       Using the script from root:     bash tmur --help
@@ -63,19 +63,15 @@ ${PATH_BIN}ip6tables -P FORWARD ACCEPT
 ${PATH_BIN}ip6tables -P OUTPUT ACCEPT
 }
 
-save() {
+old_save() {
 echo -e " > Saving rules."
 	# Remove user permissions, before create file, then we will save rules to file 
-	umask 177
-	mkdir -p /etc/iptables
+	#umask 177
+	#mkdir -p /etc/iptables
 	${PATH_BIN}iptables-save > /etc/iptables/rules.v4
 	${PATH_BIN}ip6tables-save > /etc/iptables/rules.v6
 	echo "$ADD_LIST_v4" > /etc/iptables/firewall.list.rules.v4
 	echo "$ADD_LIST_v6" > /etc/iptables/firewall.list.rules.v6
-
-    # Then we will create script to restore rules after reboot for any linux system.
-	system_iptables_save
-	#echo "Linux: $LINUX_DISTRIBUTION"
 }
 
 status_v4() {

@@ -22,7 +22,7 @@ NAME_APP="tmur"
 
 
 
-
+#######################################{
 ##  Options for install I created similar to options in cmake macros for rpm:
 ##########  Fragment from cmake macros:
 ##        -DCMAKE_INSTALL_PREFIX:PATH=%{_prefix} \\\
@@ -50,12 +50,118 @@ INSTALL_PATH=${INSTALL_PREFIX}/${NAME_APP}
 ## If you don't know where install read:
 ##  https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard
 ##  https://refspecs.linuxfoundation.org/fhs.shtml
-##########
+#######################################}
 
 
+PRINT_ERROR_NOT_SUPPORTED() {
+    echo "======================"
+    echo "--> Error: $1 not found or you have not installed."
+    echo "	Ask for help to get help and better support your linux distribution."
+    echo "      Write there  https://github.com/tele1/Tmur/issues "
+    echo "	And ask the developers of the iptables package in your linux distribution. "
+    echo "	"
+        read -r -p 'Do you want to continue? y/n ' CHOICE_1
+        case "$CHOICE_1" in
+            n|N) echo 'Installation canceled. ' ; exit 1;;
+            y|Y) echo 'Installation continued.' ;;
+            *) echo 'Response not valid' ; exit 1 ;;
+        esac
+}
+
+
+# Path to iptables binary
+PATH_IPT_BIN=$(dirname $(which iptables) |  awk '{ print $1 "/" }')
+if [ ! $(echo "$PATH_IPT_BIN" | grep "\S" | wc -l) -eq "1" ] ; then
+    PRINT_ERROR_NOT_SUPPORTED  "Path to iptables"
+fi
 
 
 INSTALL_APP() {
+INSTALL_INIT_SERVICE()  {
+    echo "This part script is not finished." ;
+    echo " Examples in services/init/ " ; exit 1
+    # /etc/rc.d/init.d/
+    chmod 644 /etc/rc.d/init.d/ip4tables.service
+    chmod 644 /etc/rc.d/init.d/ip6tables.service
+    service ip4tables.service start
+    service ip6tables.service start
+}
+
+INSTALL_SYSTEMD_SERVICE()  {
+    if [[ -f /etc/systemd/system/ip4tables.service  ]] ; then
+        echo "File /etc/systemd/system/ip4tables.service exists. Something is not working. Exiting." ; exit 1
+    else
+        echo "Flush script will be skipped for systemd."
+        echo "Try use firewall instead of this later."
+        PATH_INPUT=PATH_TO_IPT_BIN ;
+        PATH_OUTPUT="$PATH_IPT_BIN" ;
+        sed "s|${PATH_INPUT}|${PATH_OUTPUT}|g" services/systemd/ip4tables.service > /etc/systemd/system/ip4tables.service 
+        chmod 644 /etc/systemd/system/ip4tables.service
+        sed "s|${PATH_INPUT}|${PATH_OUTPUT}|g" services/systemd/ip6tables.service > /etc/systemd/system/ip6tables.service 
+        chmod 644 /etc/systemd/system/ip6tables.service
+    fi
+    if [[ -f /etc/systemd/system/ip4tables.service  ]] ; then
+        echo "File ip4tables.service created."
+    else 
+        echo "We can not create /etc/systemd/system/ip4tables.service file. Something is not working. Exiting." ; exit 1
+    fi
+    ${PATH_BIN}iptables-save  > /etc/iptables/ip4tables.rules 
+    ${PATH_BIN}ip6tables-save > /etc/iptables/ip6tables.rules
+    systemctl enable ip4tables.service
+    systemctl start  ip4tables.service
+    systemctl enable ip6tables.service
+    systemctl start  ip6tables.service
+    systemctl status ip4tables.service
+    systemctl status ip6tables.service
+}
+
+    #### Detect system service manager #####{
+    #   More about this in services/README.md
+    INIT_PATH=$(readlink -f "$(which init)")
+    SYSTEMD_PATH=$(readlink -f "$(which systemd)")
+    OPENRC_PATH=$(readlink -f "$(which openrc)")
+
+    # Grep will avoid symlink to systemd
+    if echo "$INIT_PATH" | grep -q init ; then
+        # Output of command "service --status-all" can be different for linux distributions, so I can not check if service running or not.
+        service --status-all | grep -q iptables
+        if [ ! $? -eq 0 ]; then
+            PRINT_ERROR_NOT_SUPPORTED "Service iptables for init"
+            read -r -p 'Do you want try force install iptables service by this script to your system? y/n ' CHOICE_2
+            case "$CHOICE_2" in
+                n|N) echo 'Service installation canceled. ' ;;
+                y|Y) echo 'Installation continued.' ; INSTALL_INIT_SERVICE ;;
+                *) echo 'Response not valid' ; exit 1 ;;
+            esac
+        fi
+    elif echo "$SYSTEMD_PATH" | grep -q systemd ; then
+        systemctl --type=service --all | grep -q iptables
+        if [ ! $? -eq 0 ]; then
+            PRINT_ERROR_NOT_SUPPORTED "Service iptables for systemd"
+            read -r -p 'Do you want try force install iptables service by this script to your system? y/n ' CHOICE_2
+            case "$CHOICE_2" in
+                n|N) echo 'Service installation canceled. '  ;;
+                y|Y) echo 'Installation continued.' ; INSTALL_SYSTEMD_SERVICE ;;
+                *) echo 'Response not valid' ; exit 1 ;;
+            esac
+        else
+            echo "Warning: Systemd not support save option and it can cause problems."
+            echo '  Instead of this we will try use: iptables-save -f /path/file '
+            #   The path to the file can be different for each linux distribution.
+            systemctl cat apport.service | grep ExecStart
+        fi
+    elif echo "$OPENRC_PATH" | grep -q openrc ; then
+        rc-status | grep -q iptables
+        if [ ! $? -eq 0 ]; then
+            PRINT_ERROR_NOT_SUPPORTED "Service iptables for openrc"
+            echo "This part of script is not finished."
+        fi
+    else
+        PRINT_ERROR_NOT_SUPPORTED "System service manager"
+    fi
+
+
+
 ##  Create missing folders, if you don't have: 
 ##  I tried "install" command but not working as I want.
 mkdir -pv ${INSTALL_PATH}
@@ -193,7 +299,9 @@ case $1 in
 esac
 ###################}
 
-##  1. Other way is install app with checkinstall (This create simple .deb package and is not portable):
+##########################{
+##  1. Other way install tmur for Debian , Linux mint , Ubuntu
+##      install app with checkinstall (This create simple .deb package and is not portable):
 ##          su -c 'mkdir -p /opt/your_app_name/' 
 ##          checkinstall --install=no --maintainer=your_user_name --pkgname=your_app_name --pkgversion=version_number --pkglicense="GPL v.3" --provides=your_app_name --nodoc  
 ##  2. Check ready package (read-only permissions and location of files):
@@ -220,4 +328,4 @@ esac
 ##  From /usr/bin/ folder and from root:
 ##          ln -s app_name    /opt/app_name/app_name
 ##  
-##
+##########################}
