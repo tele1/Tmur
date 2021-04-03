@@ -5,16 +5,18 @@
 # Using the script:     bash tmur --help
 
 
-VERSION="1"
+VERSION="2"
 LICENCE="GPL v3   https://www.gnu.org/licenses/gpl.html "
 SOURCE="https://github.com/tele1/Tmur"
+SUPPORT="https://github.com/tele1/Tmur/issues"
+DEBUG="ON"    # Switch if you need: DEBUG="OFF" / DEBUG="ON"
 
 
 ##  Name of script (do not use spaces and special characters).
 NAME_APP="tmur"
 
-    RC='\e[0;31m' # Red Color
-    NC='\e[0m' # No Color
+source lib/messages.lib.sh
+source lib/system.settings.lib.sh
 
 
 ##  Check root running
@@ -53,46 +55,39 @@ INSTALL_PATH=${INSTALL_PREFIX}/${NAME_APP}
 #######################################}
 
 
-PRINT_ERROR_NOT_SUPPORTED() {
-    echo "======================"
-    echo "--> Error: $1 not found or you have not installed."
-    echo "	Ask for help to get help and better support your linux distribution."
-    echo "      Write there  https://github.com/tele1/Tmur/issues "
-    echo "	And ask the developers of the iptables package in your linux distribution. "
-    echo "	"
-        read -r -p 'Do you want to continue? y/n ' CHOICE_1
-        case "$CHOICE_1" in
-            n|N) echo 'Installation canceled. ' ; exit 1;;
-            y|Y) echo 'Installation continued.' ;;
-            *) echo 'Response not valid' ; exit 1 ;;
-        esac
-}
-
-
-# Path to iptables binary
-PATH_IPT_BIN=$(dirname $(which iptables) |  awk '{ print $1 "/" }')
-if [ ! $(echo "$PATH_IPT_BIN" | grep "\S" | wc -l) -eq "1" ] ; then
-    PRINT_ERROR_NOT_SUPPORTED  "Path to iptables"
-fi
-
-
 INSTALL_APP() {
 INSTALL_INIT_SERVICE()  {
-    echo "This part script is not finished." ;
-    echo " Examples in services/init/ " ; exit 1
-    # /etc/rc.d/init.d/
+    cp services/init/ip4tables.service /etc/rc.d/init.d/ip4tables.service
+    if [[ ! -f /etc/rc.d/init.d/ip4tables.service  ]] ; then
+        MESSAGE_ERROR "File /etc/rc.d/init.d/ip4tables.service not exists. Something is not working. Exiting." ; exit 1
+    fi
+    cp services/init/ip6tables.service /etc/rc.d/init.d/ip6tables.service
     chmod 644 /etc/rc.d/init.d/ip4tables.service
     chmod 644 /etc/rc.d/init.d/ip6tables.service
-    service ip4tables.service start
-    service ip6tables.service start
+    case "$SYSTEM_SERVICE_MANAGER" in
+        "init") 
+                service ip4tables.service start
+                service ip6tables.service start
+                service ip4tables.service status
+                service ip6tables.service status
+        ;;
+        "openrc")
+            #   https://wiki.archlinux.org/index.php/OpenRC
+                rc-service ip4tables.service start
+                rc-service ip6tables.service start
+                rc-service ip4tables.service status
+                rc-service ip6tables.service status
+        ;;
+    esac
 }
 
 INSTALL_SYSTEMD_SERVICE()  {
+# Warning: Tmur use service to load rules after reboot, without detect service may not work correct
     if [[ -f /etc/systemd/system/ip4tables.service  ]] ; then
         echo "File /etc/systemd/system/ip4tables.service exists. Something is not working. Exiting." ; exit 1
     else
         echo "Flush script will be skipped for systemd."
-        echo "Try use firewall instead of this later."
+        echo "Try use firewall instead of this later. ;-)"
         PATH_INPUT=PATH_TO_IPT_BIN ;
         PATH_OUTPUT="$PATH_IPT_BIN" ;
         sed "s|${PATH_INPUT}|${PATH_OUTPUT}|g" services/systemd/ip4tables.service > /etc/systemd/system/ip4tables.service 
@@ -115,51 +110,31 @@ INSTALL_SYSTEMD_SERVICE()  {
     systemctl status ip6tables.service
 }
 
+#####################################################
     #### Detect system service manager #####{
     #   More about this in services/README.md
-    INIT_PATH=$(readlink -f "$(which init)")
-    SYSTEMD_PATH=$(readlink -f "$(which systemd)")
-    OPENRC_PATH=$(readlink -f "$(which openrc)")
-
-    # Grep will avoid symlink to systemd
-    if echo "$INIT_PATH" | grep -q init ; then
-        # Output of command "service --status-all" can be different for linux distributions, so I can not check if service running or not.
-        service --status-all | grep -q iptables
-        if [ ! $? -eq 0 ]; then
-            PRINT_ERROR_NOT_SUPPORTED "Service iptables for init"
-            read -r -p 'Do you want try force install iptables service by this script to your system? y/n ' CHOICE_2
+    echo "Detected system service manager = $SYSTEM_SERVICE_MANAGER"
+    MESSAGE_DEBUG "IPTABLES_SERVICES = $IPTABLES_SERVICES"
+    if [ -z "$IPTABLES_SERVICES" ] ; then
+        MESSAGE_WARNING "Iptable service not found. This is needed to load iptables rules on boot."
+        MESSAGE_WARNING "You can try install this service with iptables-persistent package from your repository."
+        MESSAGE_WARNING "Some linux distributions do not have this package so I added options here."
+        read -r -p 'Do you want try force install iptables service by this script to your system? y/n ' CHOICE_2
             case "$CHOICE_2" in
                 n|N) echo 'Service installation canceled. ' ;;
-                y|Y) echo 'Installation continued.' ; INSTALL_INIT_SERVICE ;;
+                y|Y) echo 'Installation continued.' ; 
+                case "$SYSTEM_SERVICE_MANAGER" in
+                    "init"|"openrc") INSTALL_INIT_SERVICE
+                    ;;
+                    "systemd") INSTALL_SYSTEMD_SERVICE
+                    ;;
+                esac
+                ;;
                 *) echo 'Response not valid' ; exit 1 ;;
             esac
-        fi
-    elif echo "$SYSTEMD_PATH" | grep -q systemd ; then
-        systemctl --type=service --all | grep -q iptables
-        if [ ! $? -eq 0 ]; then
-            PRINT_ERROR_NOT_SUPPORTED "Service iptables for systemd"
-            read -r -p 'Do you want try force install iptables service by this script to your system? y/n ' CHOICE_2
-            case "$CHOICE_2" in
-                n|N) echo 'Service installation canceled. '  ;;
-                y|Y) echo 'Installation continued.' ; INSTALL_SYSTEMD_SERVICE ;;
-                *) echo 'Response not valid' ; exit 1 ;;
-            esac
-        else
-            echo "Warning: Systemd not support save option and it can cause problems."
-            echo '  Instead of this we will try use: iptables-save -f /path/file '
-            #   The path to the file can be different for each linux distribution.
-            systemctl cat apport.service | grep ExecStart
-        fi
-    elif echo "$OPENRC_PATH" | grep -q openrc ; then
-        rc-status | grep -q iptables
-        if [ ! $? -eq 0 ]; then
-            PRINT_ERROR_NOT_SUPPORTED "Service iptables for openrc"
-            echo "This part of script is not finished."
-        fi
-    else
-        PRINT_ERROR_NOT_SUPPORTED "System service manager"
     fi
-
+    #### Detect system service manager #####}
+#####################################################
 
 
 ##  Create missing folders, if you don't have: 
@@ -261,8 +236,42 @@ if [ -d ${INSTALL_PATH} ] ;then
 #    ##  Update database of desktop entries:
 #    update-desktop-database /usr/share/applications
 fi
-[ -d "${INSTALL_PATH}" ] || echo "--> Removal ${INSTALL_PATH} completed successfully"
-[ -d "${INSTALL_PATH}" ] && echo "--> ${RC}Error: Removal ${INSTALL_PATH} failed ${NC}"
+[ -d "${INSTALL_PATH}" ] || MESSAGE_INFO  "--> Removal ${INSTALL_PATH} completed successfully"
+[ -d "${INSTALL_PATH}" ] && MESSAGE_ERROR "--> Removal ${INSTALL_PATH} failed."
+
+    echo "Removing a service ..."
+    ##  https://askubuntu.com/questions/19320/how-to-enable-or-disable-services/20347#20347
+    ##  Iptables service not running, but the service manager shows. More info in services/Readme.md
+    case "$SYSTEM_SERVICE_MANAGER" in
+        "init") 
+            if grep  -q "installed from Tmur" /etc/rc.d/init.d/ip4tables.service ; then
+                ## update-rc.d or in RedHat based distros, chkconfig to enable or disable service on boot up run
+                rm -v /etc/rc.d/init.d/ip4tables.service ; rm -v /etc/rc.d/init.d/ip6tables.service
+            else
+                echo "Service installed from Tmur not found, so not will removed."
+            fi
+        ;;
+        "openrc")
+            if grep  -q "installed from Tmur" /etc/rc.d/init.d/ip4tables.service ; then
+                rc-update del ip4tables.service ; rc-update del ip6tables.service
+                rm -v /etc/rc.d/init.d/ip4tables.service ; rm -v /etc/rc.d/init.d/ip6tables.service
+            else
+                echo "Service installed from Tmur not found, so not will removed."
+            fi
+        ;;
+        "systemd") 
+            if grep  -q "installed from Tmur" /etc/systemd/system/ip4tables.service ; then
+                ## Stop is for remove service from stupid systemd: systemctl --type=service --all 
+                systemctl stop ip4tables.service ; systemctl stop ip6tables.service
+                ##  To disable service on boot up run 
+                systemctl disable ip4tables.service ; systemctl disable ip6tables.service
+                rm -v /etc/systemd/system/ip4tables.service ; rm -v /etc/systemd/system/ip6tables.service
+                systemctl daemon-reload
+            else
+                echo "Service installed from Tmur not found, so not will removed."
+            fi
+        ;;
+    esac
 }
 
 ###################{

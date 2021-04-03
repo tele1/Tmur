@@ -1,22 +1,27 @@
 #!/bin/bash
 
 
-##########################################################################################################
-#-----------------------------------------------------{
-LINUX_DISTRIBUTION=$(lsb_release -is)
+######################################################################################{
+## ==== System Settings Library ====
+##  Dependencies:   messages.lib.sh
 
 
-PRINT_ERROR_NOT_SUPPORTED() {
-    echo "======================"
-    echo "--> Error: $1 not found or you have not installed."
-    echo "	Ask developers your linux distributionfor to get help and better support."
-    echo "  And write also there  https://github.com/tele1/Tmur/issues "
-    echo "Exiting."
-    exit 1
-}
+    LINUX_DISTRIBUTION=$(lsb_release -is)
+#   PATH_BIN = Path to iptables binary
+	PATH_BIN=$(dirname $(which iptables) |  awk '{ print $1 "/" }')
+	PATH_BIN_2=$(dirname $(which iptables))
+    PATH_IPT_BIN="$PATH_BIN"
 
+    if [ ! $(echo "$PATH_BIN" | grep "\S" | wc -l) -eq "1" ] ; then
+        PRINT_ERROR_NOT_SUPPORTED "Path to iptables"
+    fi
 
-DETECT_SYSTEM_SERVICE_MANAGER() {
+    if ! echo $PATH | grep -q "$PATH_BIN_2" ; then 
+        MESSAGE_WARNING "Path ${PATH_BIN_2} not found in PATH environment variable,"
+        MESSAGE_WARNING "so we will export this variable to PATH temporarily." 
+        export PATH=${PATH}:${PATH_BIN_2}
+    fi
+
 ######### Detect system service manager #####{
     #   Service manager like "init" or "systemd" is used for restore iptables rules after reboot or for other jobs.
     #   The service contains the path from where to restore the rules.
@@ -25,9 +30,12 @@ DETECT_SYSTEM_SERVICE_MANAGER() {
     #   1. https://help.ubuntu.com/community/IptablesHowTo#Configuration_on_startup
     #   2. https://askubuntu.com/questions/218/command-to-list-services-that-start-on-startup
     #   3. https://wiki.gentoo.org/wiki/OpenRC
+    #   4. https://www.lostsaloon.com/technology/how-to-list-all-services-in-linux/
+    #   5. always " man " :)
     INIT_PATH=$(readlink -f "$(which init)")
     SYSTEMD_PATH=$(readlink -f "$(which systemd)")
     OPENRC_PATH=$(readlink -f "$(which openrc)")
+
 
     TMUR_SAVE() {
             umask 177
@@ -36,109 +44,51 @@ DETECT_SYSTEM_SERVICE_MANAGER() {
 	        echo "$ADD_LIST_v6" > /etc/iptables/firewall.list.rules.v6
     }
 
-    # Grep will avoid symlink to other system service manager, for example init to systemd
+
+    #   " grep -q init " - will avoid symlink to other system service manager, for example init to systemd
+    #   Output of command "service --status-all" can be different for linux distributions, so I can not check if service running or not.
+    #   IPTABLES_SERVICES = iptables service list 
+    #   function save = saves used rules to a file. System service manager loads service iptables file at system startup.
     if echo "$INIT_PATH" | grep -q init ; then
-        # Output of command "service --status-all" can be different for linux distributions, so I can not check if service running or not.
-        # SYSTEM_SERVICE_MANAGER="init"
+            SYSTEM_SERVICE_MANAGER="init"
+            IPTABLES_SERVICES=$(ls  /etc/init.d/* | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk  -F'/' '{print $NF}')
         save() {
-	        ${PATH_BIN}service iptables  save
-	        ${PATH_BIN}service ip6tables save
+            while IFS= read -r LINE_SERVICE ; do
+                # Will save to file for iptables-restore
+                ${PATH_BIN}service "$LINE_SERVICE" save
+            done <<< "${IPTABLES_SERVICES}"
+            # Will save to file for Tmur
             TMUR_SAVE
         }	
     elif echo "$SYSTEMD_PATH" | grep -q systemd ; then
-        # SYSTEM_SERVICE_MANAGER="systemd"
+            SYSTEM_SERVICE_MANAGER="systemd"
+            IPTABLES_SERVICES=$(systemctl --type=service --all | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk '{print $1}')
         save() {
-	        PATH_TO_RULES=$(systemctl cat iptables.service | grep ExecStart | awk '{ print $2 }')
-            ${PATH_BIN}iptables-save  > "$PATH_TO_RULES"
-            ${PATH_BIN}ip6tables-save > "$PATH_TO_RULES"
+            ONE_IPTABLE_SERVICE=$(head -n1 <<< "$IPTABLES_SERVICES")
+	        PATH_TO_RULES=$(systemctl cat "$ONE_IPTABLE_SERVICE" | grep ExecStart | awk '{ print $2 }')
+            if [ -z "$PATH_TO_RULES" ] ; then
+                echo "IPTABLES_SERVICES not found"
+            else
+                ${PATH_BIN}iptables-save  > "$PATH_TO_RULES"
+                ${PATH_BIN}ip6tables-save > "$PATH_TO_RULES"
+            fi
             TMUR_SAVE
         }
     elif echo "$OPENRC_PATH" | grep -q openrc ; then
-        # SYSTEM_SERVICE_MANAGER="openrc"
+            SYSTEM_SERVICE_MANAGER="openrc"
+            IPTABLES_SERVICES=$(ls  /etc/init.d/* | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk  -F'/' '{print $NF}')
         save() {
-	        ${PATH_BIN}rc-service iptables  save
-	        ${PATH_BIN}rc-service ip6tables save
+            while IFS= read -r LINE_SERVICE ; do
+                ${PATH_BIN}rc-service "$LINE_SERVICE" save
+            done <<< "${IPTABLES_SERVICES}"
             TMUR_SAVE
         }
     else
         PRINT_ERROR_NOT_SUPPORTED "System service manager"
     fi
 ######### Detect system service manager #####}
-}
 
 
-#   PATH_BIN = Path to iptables binary
-#   function save = saves used rules to a file. System service manager loads service iptables file at system startup.
-#   Maybe *) will overwrite this manual configuration in future.
-case "$LINUX_DISTRIBUTION" in
-"Debian")
-	PATH_BIN="/usr/sbin/"
-        # SYSTEM_SERVICE_MANAGER="systemd"
-        save() {
-	        PATH_TO_RULES=$(systemctl cat iptables.service | grep ExecStart | awk '{ print $2 }')
-            ${PATH_BIN}iptables-save  > "$PATH_TO_RULES"
-            ${PATH_BIN}ip6tables-save > "$PATH_TO_RULES"
-            TMUR_SAVE
-        }
-	;;
-"Linuxmint")
-	PATH_BIN="/usr/sbin/"
-        # SYSTEM_SERVICE_MANAGER="systemd"
-        save() {
-	        PATH_TO_RULES=$(systemctl cat iptables.service | grep ExecStart | awk '{ print $2 }')
-            ${PATH_BIN}iptables-save  > "$PATH_TO_RULES"
-            ${PATH_BIN}ip6tables-save > "$PATH_TO_RULES"
-            TMUR_SAVE
-        }
-    ;;
-"ManjaroLinux")
-	PATH_BIN="/usr/bin/"
-        # SYSTEM_SERVICE_MANAGER="systemd"
-        save() {
-	        PATH_TO_RULES=$(systemctl cat iptables.service | grep ExecStart | awk '{ print $2 }')
-            ${PATH_BIN}iptables-save  > "$PATH_TO_RULES"
-            ${PATH_BIN}ip6tables-save > "$PATH_TO_RULES"
-            TMUR_SAVE
-        }
-    ;;
-"PCLinuxOS")
-	PATH_BIN="/sbin/"  
-        # SYSTEM_SERVICE_MANAGER="init"
-        save() {
-	        ${PATH_BIN}service iptables  save
-	        ${PATH_BIN}service ip6tables save
-            TMUR_SAVE
-        }
-    ;;
-"Solus")
-	PATH_BIN="/sbin/"
-        # SYSTEM_SERVICE_MANAGER="systemd"
-        save() {
-	        PATH_TO_RULES=$(systemctl cat iptables.service | grep ExecStart | awk '{ print $2 }')
-            ${PATH_BIN}iptables-save  > "$PATH_TO_RULES"
-            ${PATH_BIN}ip6tables-save > "$PATH_TO_RULES"
-            TMUR_SAVE
-        }
-    ;;
-"UPLOS")
-	PATH_BIN="/sbin/"  
-        # SYSTEM_SERVICE_MANAGER="init"
-        save() {
-	        ${PATH_BIN}service iptables  save
-	        ${PATH_BIN}service ip6tables save
-            TMUR_SAVE
-        }	
-    ;;
-*)
-	PATH_BIN=$(dirname $(which iptables) |  awk '{ print $1 "/" }')
-    if [ ! $(echo "$PATH_BIN" | grep "\S" | wc -l) -eq "1" ] ; then
-        PRINT_ERROR_NOT_SUPPORTED "Path to iptables"
-    fi
-    DETECT_SYSTEM_SERVICE_MANAGER
-esac
-
-
-#-----------------------------------------------------}
-##########################################################################################################
-
+## ==== System Settings Library ====
+######################################################################################}
 

@@ -13,9 +13,10 @@
 
 # Relative path for read rules
 DIR_FIREWALL="$(dirname "$(readlink -f "$0")")"     # ;echo "$DIR_FIREWALL"
+SUPPORT="https://github.com/tele1/Tmur/issues"
 
 # Switch if you need: DEBUG="OFF" / DEBUG="ON"
-DEBUG="OFF"     
+DEBUG="ON"     
 
 # Load rules
 . "$DIR_FIREWALL/rules/rules_drop_ipv4.sh"
