@@ -5,7 +5,7 @@
 # Using the script:     bash tmur --help
 
 
-VERSION="2"
+VERSION="3"
 LICENCE="GPL v3   https://www.gnu.org/licenses/gpl.html "
 SOURCE="https://github.com/tele1/Tmur"
 SUPPORT="https://github.com/tele1/Tmur/issues"
@@ -97,8 +97,8 @@ INSTALL_SYSTEMD_SERVICE()  {
     else 
         echo "We can not create /etc/systemd/system/ip4tables.service file. Something is not working. Exiting." ; exit 1
     fi
-    ${PATH_BIN}iptables-save  > /etc/iptables/ip4tables.rules 
-    ${PATH_BIN}ip6tables-save > /etc/iptables/ip6tables.rules
+    ${PATH_IPT_BIN}iptables-save  > /etc/iptables/ip4tables.rules 
+    ${PATH_IPT_BIN}ip6tables-save > /etc/iptables/ip6tables.rules
     systemctl enable ip4tables.service
     systemctl start  ip4tables.service
     systemctl enable ip6tables.service
@@ -269,6 +269,12 @@ fi
             fi
         ;;
     esac
+
+    echo "Removing rules .."
+    if [ -f "/etc/iptables/firewall.list.rules.v4" ]; then
+        rm -v   /etc/iptables/firewall.list.rules.v4
+        rm -v   /etc/iptables/firewall.list.rules.v6
+    fi
 }
 
 ###################{

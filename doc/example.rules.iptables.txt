@@ -17,12 +17,12 @@ iptables -I OUTPUT -m iprange --dst-range 222.0.0.0-223.0.0.0 -j DROP
 #  Block IP
 iptables -I INPUT  -s 127.0.0.1 -j DROP
 
-#  Websites with examples: 
-#  https://www.thegeekstuff.com/2011/06/iptables-rules-examples/
-#  https://www.tecmint.com/linux-iptables-firewall-rules-examples-commands/
-
-
 #--------------------------------
+#  Websites with examples: 
+#    doc.1:     https://www.thegeekstuff.com/2011/06/iptables-rules-examples/
+#    doc.2:     https://www.tecmint.com/linux-iptables-firewall-rules-examples-commands/
+#    doc.3: Logging:    https://tecadmin.net/enable-logging-in-iptables-on-linux/
+#
 ####
 ##  List all modules of iptables:
 ##  http://ipset.netfilter.org/iptables-extensions.man.html

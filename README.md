@@ -9,7 +9,7 @@ So, before using this software, check first what your system using by default.
 
 ## Release
        Name: Firewall TMur
-       Version:  3 Beta
+       Version:  4 Beta
        License: GNU GPL v3  https://www.gnu.org/licenses/gpl-3.0.en.html
 
 I do not guarantee that the program will run properly on all systems.  

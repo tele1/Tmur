@@ -19,19 +19,19 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 load_rules()
 {
 	#load IPv4 rules
-	if [ ! -f /etc/iptables/rules.v4 ]; then
+	if [ ! -f /etc/iptables/ip4tables.rules  ]; then
 		echo "Warning: skipping IPv4 (no rules to load)"
 	else
-		iptables-restore < /etc/iptables/rules.v4
+		iptables-restore < /etc/iptables/ip4tables.rules 
 	fi
 }
 
 save_rules()
 {
 	#save IPv4 rules
-	touch /etc/iptables/rules.v4
-	chmod 0640 /etc/iptables/rules.v4
-	iptables-save > /etc/iptables/rules.v4
+	touch /etc/iptables/ip4tables.rules 
+	chmod 0640 /etc/iptables/ip4tables.rules 
+	iptables-save > /etc/iptables/ip4tables.rules 
 }
 
 flush_rules()

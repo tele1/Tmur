@@ -22,19 +22,19 @@ test -e /proc/sys/net/ipv6 || exit 0
 load_rules()
 {
 	#load IPv6 rules
-	if [ ! -f /etc/iptables/rules.v6 ]; then
+	if [ ! -f /etc/iptables/ip6tables.rules ]; then
 		echo "Warning: skipping IPv6 (no rules to load)"
 	else
-		ip6tables-restore < /etc/iptables/rules.v6
+		ip6tables-restore < /etc/iptables/ip6tables.rules
 	fi
 }
 
 save_rules()
 {
 	#save IPv6 rules
-	touch /etc/iptables/rules.v6
-	ip6tables-save > /etc/iptables/rules.v6
-	chmod 0640 /etc/iptables/rules.v6
+	touch /etc/iptables/ip6tables.rules
+	ip6tables-save > /etc/iptables/ip6tables.rules
+	chmod 0640 /etc/iptables/ip6tables.rules
 }
 
 flush_rules()
