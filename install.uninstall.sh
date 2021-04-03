@@ -53,13 +53,14 @@ INSTALL_PATH=${INSTALL_PREFIX}/${NAME_APP}
 
 INSTALL_APP() {
 INSTALL_INIT_SERVICE()  {
-    cp services/init/ip4tables.service /etc/rc.d/init.d/ip4tables.service
-    if [[ ! -f /etc/rc.d/init.d/ip4tables.service  ]] ; then
-        MESSAGE_ERROR "File /etc/rc.d/init.d/ip4tables.service not exists. Something is not working. Exiting." ; exit 1
+    # /etc/rc.d/init.d  -->  it was used by old Red Hat/Fedora
+    cp services/init/ip4tables.service /etc/init.d/ip4tables.service
+    if [[ ! -f /etc/init.d/ip4tables.service  ]] ; then
+        MESSAGE_ERROR "File /etc/init.d/ip4tables.service not exists. Something is not working. Exiting." ; exit 1
     fi
-    cp services/init/ip6tables.service /etc/rc.d/init.d/ip6tables.service
-    chmod 644 /etc/rc.d/init.d/ip4tables.service
-    chmod 644 /etc/rc.d/init.d/ip6tables.service
+    cp services/init/ip6tables.service /etc/init.d/ip6tables.service
+    chmod 644 /etc/init.d/ip4tables.service
+    chmod 644 /etc/init.d/ip6tables.service
     case "$SYSTEM_SERVICE_MANAGER" in
         "init") 
                 service ip4tables.service start
@@ -240,17 +241,17 @@ fi
     ##  Iptables service not running, but the service manager shows. More info in services/Readme.md
     case "$SYSTEM_SERVICE_MANAGER" in
         "init") 
-            if grep  -q "installed from Tmur" /etc/rc.d/init.d/ip4tables.service ; then
+            if grep  -q "installed from Tmur" /etc/init.d/ip4tables.service ; then
                 ## update-rc.d or in RedHat based distros, chkconfig to enable or disable service on boot up run
-                rm -v /etc/rc.d/init.d/ip4tables.service ; rm -v /etc/rc.d/init.d/ip6tables.service
+                rm -v /etc/init.d/ip4tables.service ; rm -v /etc/init.d/ip6tables.service
             else
                 echo "Service installed from Tmur not found, so not will removed."
             fi
         ;;
         "openrc")
-            if grep  -q "installed from Tmur" /etc/rc.d/init.d/ip4tables.service ; then
+            if grep  -q "installed from Tmur" /etc/init.d/ip4tables.service ; then
                 rc-update del ip4tables.service ; rc-update del ip6tables.service
-                rm -v /etc/rc.d/init.d/ip4tables.service ; rm -v /etc/rc.d/init.d/ip6tables.service
+                rm -v /etc/init.d/ip4tables.service ; rm -v /etc/init.d/ip6tables.service
             else
                 echo "Service installed from Tmur not found, so not will removed."
             fi
