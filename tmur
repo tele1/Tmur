@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #       Name: Firewall TMur
-#       Version:  4 Beta
+#       Version:  5 Beta
 #       License: GNU GPL v3  https://www.gnu.org/licenses/gpl-3.0.en.html
 #       Destiny: Script for easy management of the iptables firewall.
 #       Using the script from root:     bash tmur --help
@@ -19,12 +19,12 @@ SUPPORT="https://github.com/tele1/Tmur/issues"
 DEBUG="ON"     
 
 # Load rules
-. "$DIR_FIREWALL/rules/rules_drop_ipv4.sh"
-. "$DIR_FIREWALL/rules/rules_accept_ipv4.sh"
-. "$DIR_FIREWALL/rules/rules_log_ipv4.sh"
+source "$DIR_FIREWALL/rules/rules_drop_ipv4.sh"
+source "$DIR_FIREWALL/rules/rules_accept_ipv4.sh"
+source "$DIR_FIREWALL/rules/rules_log_ipv4.sh"
 # Load libs
-. "$DIR_FIREWALL/lib/system.settings.lib.sh"
-. "$DIR_FIREWALL/lib/messages.lib.sh"
+source "$DIR_FIREWALL/lib/system.settings.lib.sh"
+source "$DIR_FIREWALL/lib/messages.lib.sh"
 
 	#echo "$LINUX_DISTRIBUTION"
 
@@ -32,36 +32,36 @@ DEBUG="ON"
 
 reset_firewall_v4() {
 echo -e " > Firewall has been reset."
-${PATH_IPT_BIN}iptables -F
-${PATH_IPT_BIN}iptables -X
-${PATH_IPT_BIN}iptables -t nat -F
-${PATH_IPT_BIN}iptables -t nat -X
-${PATH_IPT_BIN}iptables -t mangle -F
-${PATH_IPT_BIN}iptables -t mangle -X
-${PATH_IPT_BIN}iptables -t raw -F
-${PATH_IPT_BIN}iptables -t raw -X
-${PATH_IPT_BIN}iptables -t security -F
-${PATH_IPT_BIN}iptables -t security -X
-${PATH_IPT_BIN}iptables -P INPUT ACCEPT
-${PATH_IPT_BIN}iptables -P FORWARD ACCEPT
-${PATH_IPT_BIN}iptables -P OUTPUT ACCEPT
+${PATH_IPT_BIN}/iptables -F
+${PATH_IPT_BIN}/iptables -X
+${PATH_IPT_BIN}/iptables -t nat -F
+${PATH_IPT_BIN}/iptables -t nat -X
+${PATH_IPT_BIN}/iptables -t mangle -F
+${PATH_IPT_BIN}/iptables -t mangle -X
+${PATH_IPT_BIN}/iptables -t raw -F
+${PATH_IPT_BIN}/iptables -t raw -X
+${PATH_IPT_BIN}/iptables -t security -F
+${PATH_IPT_BIN}/iptables -t security -X
+${PATH_IPT_BIN}/iptables -P INPUT ACCEPT
+${PATH_IPT_BIN}/iptables -P FORWARD ACCEPT
+${PATH_IPT_BIN}/iptables -P OUTPUT ACCEPT
 }
 
 reset_firewall_v6() {
 echo -e " > Firewall has been reset."
-${PATH_IPT_BIN}ip6tables -F
-${PATH_IPT_BIN}ip6tables -X
-${PATH_IPT_BIN}ip6tables -t nat -F
-${PATH_IPT_BIN}ip6tables -t nat -X
-${PATH_IPT_BIN}ip6tables -t mangle -F
-${PATH_IPT_BIN}ip6tables -t mangle -X
-${PATH_IPT_BIN}ip6tables -t raw -F
-${PATH_IPT_BIN}ip6tables -t raw -X
-${PATH_IPT_BIN}ip6tables -t security -F
-${PATH_IPT_BIN}ip6tables -t security -X
-${PATH_IPT_BIN}ip6tables -P INPUT ACCEPT
-${PATH_IPT_BIN}ip6tables -P FORWARD ACCEPT
-${PATH_IPT_BIN}ip6tables -P OUTPUT ACCEPT
+${PATH_IPT_BIN}/ip6tables -F
+${PATH_IPT_BIN}/ip6tables -X
+${PATH_IPT_BIN}/ip6tables -t nat -F
+${PATH_IPT_BIN}/ip6tables -t nat -X
+${PATH_IPT_BIN}/ip6tables -t mangle -F
+${PATH_IPT_BIN}/ip6tables -t mangle -X
+${PATH_IPT_BIN}/ip6tables -t raw -F
+${PATH_IPT_BIN}/ip6tables -t raw -X
+${PATH_IPT_BIN}/ip6tables -t security -F
+${PATH_IPT_BIN}/ip6tables -t security -X
+${PATH_IPT_BIN}/ip6tables -P INPUT ACCEPT
+${PATH_IPT_BIN}/ip6tables -P FORWARD ACCEPT
+${PATH_IPT_BIN}/ip6tables -P OUTPUT ACCEPT
 }
 
 old_save() {
@@ -69,8 +69,8 @@ echo -e " > Saving rules."
 	# Remove user permissions, before create file, then we will save rules to file 
 	#umask 177
 	#mkdir -p /etc/iptables
-	${PATH_IPT_BIN}iptables-save > /etc/iptables/rules.v4
-	${PATH_IPT_BIN}ip6tables-save > /etc/iptables/rules.v6
+	${PATH_IPT_BIN}/iptables-save > /etc/iptables/rules.v4
+	${PATH_IPT_BIN}/ip6tables-save > /etc/iptables/rules.v6
 	echo "$ADD_LIST_v4" > /etc/iptables/firewall.list.rules.v4
 	echo "$ADD_LIST_v6" > /etc/iptables/firewall.list.rules.v6
 }
@@ -80,7 +80,7 @@ status_v4() {
     # iptables-save inside Linux Mint includes a counter "IN DEFAULT"
 
 # Strange, I need sort all rules for Linux Mint. :( So this is simply sort, but not correct.
-    LOADED_FIREWALL_4=$(${PATH_IPT_BIN}iptables-save  | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g' | sort)
+    LOADED_FIREWALL_4=$(${PATH_IPT_BIN}/iptables-save  | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g' | sort)
     SAVED_FIREWALL_4=$(cat /etc/iptables/rules.v4 | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g' | sort)
 
 if ! cmp -s <(echo "$LOADED_FIREWALL_4") <(echo "$SAVED_FIREWALL_4") ; then
@@ -95,7 +95,7 @@ fi
 
 status_v6() {
     # sed will remove counter [number:number]
-    LOADED_FIREWALL_6=$(${PATH_IPT_BIN}ip6tables-save | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g')
+    LOADED_FIREWALL_6=$(${PATH_IPT_BIN}/ip6tables-save | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g')
     SAVED_FIREWALL_6=$(cat /etc/iptables/rules.v6 | grep -v ^"#" | sed 's/\[.*:.*\]/[COUNTER]/g')
 if ! cmp -s <(echo "$SAVED_FIREWALL_6") <(echo "$LOADED_FIREWALL_6") ; then
     MESSAGE_ERROR "Error: Loaded firewall ipv6 is other than saved in /etc/iptables/rules.v6"
@@ -107,22 +107,22 @@ fi
 check() {
 	reset
 	echo "================{"
-	echo "  ${PATH_IPT_BIN}ip a | grep inet ( show ipv4 and ipv6 ) "
+	echo "  ${PATH_IPT_BIN}/ip a | grep inet ( show ipv4 and ipv6 ) "
 			 #ifconfig | grep inet
 			ip a | grep inet | awk '{print $1 " " $2}'
 	echo "================}"
 	echo "================{"
-	echo "  ${PATH_IPT_BIN}ip6tables -L -n -v --line-numbers"
-			${PATH_IPT_BIN}ip6tables -L -n -v --line-numbers
+	echo "  ${PATH_IPT_BIN}/ip6tables -L -n -v --line-numbers"
+			${PATH_IPT_BIN}/ip6tables -L -n -v --line-numbers
 	echo "================}"
 	echo "======================={"
-	echo "  ${PATH_IPT_BIN}iptables -L -n -v --line-numbers"
-			${PATH_IPT_BIN}iptables -L -n -v --line-numbers
+	echo "  ${PATH_IPT_BIN}/iptables -L -n -v --line-numbers"
+			${PATH_IPT_BIN}/iptables -L -n -v --line-numbers
 	echo "=======================}"
 
 	echo "======================={"
-	echo "  ${PATH_IPT_BIN}iptables -S"
-			${PATH_IPT_BIN}iptables -S
+	echo "  ${PATH_IPT_BIN}/iptables -S"
+			${PATH_IPT_BIN}/iptables -S
 	echo "=======================}"
 	echo "======================================{"
 	echo "  Used IPv4 rules:"
@@ -139,15 +139,15 @@ check() {
 for_server_v4() {
     echo -e " > $FUNCNAME"
     # COMMENT="-m comment --comment Default_policy_for_server_v4"
-if ${PATH_IFCONFIG_BIN}/ifconfig | grep -q "inet " ; then 
-    ${PATH_IPT_BIN}iptables -P INPUT   DROP 
-    ${PATH_IPT_BIN}iptables -P FORWARD DROP 
-    ${PATH_IPT_BIN}iptables -P OUTPUT  DROP 
+if ${PATH_IFC_BIN}/ifconfig | grep -q "inet " ; then 
+    ${PATH_IPT_BIN}/iptables -P INPUT   DROP 
+    ${PATH_IPT_BIN}/iptables -P FORWARD DROP 
+    ${PATH_IPT_BIN}/iptables -P OUTPUT  DROP 
 else
 	if lsmod | grep -q ipv4 ; then
-		MESSAGE_ERROR "IPv4 is not active, but ipv4 module still running."
+		MESSAGE_WARNING "IPv4 is not active, but ipv4 module still running."
     else
-		MESSAGE_ERROR "IPv4 is not active and ipv4 module is not active."
+		MESSAGE_INFO "IPv4 is not active and ipv4 module is not active."
 	fi
 fi
 }
@@ -155,15 +155,15 @@ fi
 for_server_v6() {
     echo -e " > $FUNCNAME"
     # COMMENT="-m comment --comment Default_policy_for_server_v6"
-if ${PATH_IFCONFIG_BIN}/ifconfig | grep -q inet6 ; then 
-	${PATH_IPT_BIN}ip6tables -P INPUT   DROP
-	${PATH_IPT_BIN}ip6tables -P FORWARD DROP
-	${PATH_IPT_BIN}ip6tables -P OUTPUT  DROP
+if ${PATH_IFC_BIN}/ifconfig | grep -q inet6 ; then 
+	${PATH_IPT_BIN}/ip6tables -P INPUT   DROP
+	${PATH_IPT_BIN}/ip6tables -P FORWARD DROP
+	${PATH_IPT_BIN}/ip6tables -P OUTPUT  DROP
 else
 	if lsmod | grep -q ipv6 ; then
-		MESSAGE_ERROR "IPv6 is not active, but ipv6 module still running."
+		MESSAGE_WARNING "IPv6 is not active, but ipv6 module still running."
     else
-		MESSAGE_ERROR "IPv6 is not active and module ipv6 is not active."
+		MESSAGE_INFO "IPv6 is not active and module ipv6 is not active."
 	fi
 fi
 }
@@ -171,20 +171,20 @@ fi
 for_desktop_v4() {
     echo -e " > $FUNCNAME"
     COMMENT="-m comment --comment Default_policy_desktop_v4"
-if ${PATH_IFCONFIG_BIN}/ifconfig | grep -q "inet " ; then
-    ${PATH_IPT_BIN}iptables -P INPUT   DROP
-    ${PATH_IPT_BIN}iptables -P FORWARD DROP
-    ${PATH_IPT_BIN}iptables -P OUTPUT  ACCEPT
-            ${PATH_IPT_BIN}iptables -A INPUT -i lo -j ACCEPT $COMMENT
-            ${PATH_IPT_BIN}iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT $COMMENT
-            ##${PATH_IPT_BIN}iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
-            ##${PATH_IPT_BIN}iptables -A INPUT -p icmp --icmp-type 8 -j LOG --log-prefix "PING: " --log-level 4
-            ##${PATH_IPT_BIN}iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+if ${PATH_IFC_BIN}/ifconfig | grep -q "inet " ; then
+    ${PATH_IPT_BIN}/iptables -P INPUT   DROP
+    ${PATH_IPT_BIN}/iptables -P FORWARD DROP
+    ${PATH_IPT_BIN}/iptables -P OUTPUT  ACCEPT
+            ${PATH_IPT_BIN}/iptables -A INPUT -i lo -j ACCEPT $COMMENT
+            ${PATH_IPT_BIN}/iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT $COMMENT
+            ##${PATH_IPT_BIN}/iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
+            ##${PATH_IPT_BIN}/iptables -A INPUT -p icmp --icmp-type 8 -j LOG --log-prefix "PING: " --log-level 4
+            ##${PATH_IPT_BIN}/iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
 else
 	if lsmod | grep -q ipv4 ; then
-		MESSAGE_ERROR "IPv4 is not active, but ipv4 module still running."
+		MESSAGE_WARNING "IPv4 is not active, but ipv4 module still running."
     else
-		MESSAGE_ERROR "IPv4 is not active and ipv4 module is not active."
+		MESSAGE_INFO "IPv4 is not active and ipv4 module is not active."
 	fi
 fi
 
@@ -194,17 +194,17 @@ fi
 for_desktop_v6() {
     echo -e " > $FUNCNAME"
     COMMENT="-m comment --comment Default_policy_desktop_v6"
-if ${PATH_IFCONFIG_BIN}/ifconfig | grep -q inet6 ; then 
-	${PATH_IPT_BIN}ip6tables -P INPUT DROP
-	${PATH_IPT_BIN}ip6tables -P FORWARD DROP
-	${PATH_IPT_BIN}ip6tables -P OUTPUT ACCEPT
-            ${PATH_IPT_BIN}ip6tables -A INPUT -i lo -j ACCEPT $COMMENT
-            ${PATH_IPT_BIN}ip6tables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT $COMMENT
+if ${PATH_IFC_BIN}/ifconfig | grep -q inet6 ; then 
+	${PATH_IPT_BIN}/ip6tables -P INPUT DROP
+	${PATH_IPT_BIN}/ip6tables -P FORWARD DROP
+	${PATH_IPT_BIN}/ip6tables -P OUTPUT ACCEPT
+            ${PATH_IPT_BIN}/ip6tables -A INPUT -i lo -j ACCEPT $COMMENT
+            ${PATH_IPT_BIN}/ip6tables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT $COMMENT
 else
 	if lsmod | grep -q ipv6 ; then
-		MESSAGE_ERROR "IPv6 is not active, but ipv6 module still running."
+		MESSAGE_WARNING "IPv6 is not active, but ipv6 module still running."
     else
-		MESSAGE_ERROR "IPv6 is not active and module ipv6 is not active."
+		MESSAGE_INFO "IPv6 is not active and module ipv6 is not active."
 	fi
 fi
 }
@@ -314,8 +314,8 @@ case $1 in
     #MESSAGE_DEBUG "|| 1= $1 || 2= $2 || 3= $3"
     check_ip_v4 ${2}
     COMMENT="-m comment --comment "IPTABLES:block_IP""
-    RULE_IP_1=$(echo "${PATH_IPT_BIN}iptables -I INPUT  -s ${2} -j DROP ${COMMENT}")
-    RULE_IP_2=$(echo "${PATH_IPT_BIN}iptables -I OUTPUT -d ${2} -j DROP ${COMMENT}")
+    RULE_IP_1=$(echo "${PATH_IPT_BIN}/iptables -I INPUT  -s ${2} -j DROP ${COMMENT}")
+    RULE_IP_2=$(echo "${PATH_IPT_BIN}/iptables -I OUTPUT -d ${2} -j DROP ${COMMENT}")
     WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/firewall.list.rules.v4)\n${RULE_IP_1} \n${RULE_IP_2}")
     MESSAGE_DEBUG "$WITH_NEW_RULES"
 
@@ -331,8 +331,8 @@ case $1 in
     check_ip_v4 ${2}
     check_ip_v4 ${3}
     COMMENT="-m comment --comment "IPTABLES:block_range_of_IP""
-    RULE_IP_1=$(echo "${PATH_IPT_BIN}iptables -I INPUT  -m iprange --src-range ${2}-${3} -j DROP ${COMMENT}")
-    RULE_IP_2=$(echo "${PATH_IPT_BIN}iptables -I OUTPUT -m iprange --dst-range ${2}-${3} -j DROP ${COMMENT}")
+    RULE_IP_1=$(echo "${PATH_IPT_BIN}/iptables -I INPUT  -m iprange --src-range ${2}-${3} -j DROP ${COMMENT}")
+    RULE_IP_2=$(echo "${PATH_IPT_BIN}/iptables -I OUTPUT -m iprange --dst-range ${2}-${3} -j DROP ${COMMENT}")
     WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/firewall.list.rules.v4)\n${RULE_IP_1} \n${RULE_IP_2}")
     MESSAGE_DEBUG "$WITH_NEW_RULES"
 
@@ -436,7 +436,7 @@ case $1 in
 	ifconfig | grep -v 'RX\|TX'
   ;;
   "--numbers")
-	"${PATH_IPT_BIN}"iptables -L --line-numbers -n
+	"${PATH_IPT_BIN}/"iptables -L --line-numbers -n
   ;;
   "--syslog")
 	grep "IPT:" /var/log/syslog
@@ -519,24 +519,24 @@ case $1 in
 				status_v6
 		echo "	"
 		echo "== Iptables -S: =="
-                if ${PATH_IFCONFIG_BIN}/ifconfig | grep -q "inet " ; then 
+                if ${PATH_IFC_BIN}/ifconfig | grep -q "inet " ; then 
 				    iptables -S
                 else
 	                if lsmod | grep -q ipv4 ; then
-		                MESSAGE_ERROR "IPv4 is not active, but ipv4 module still running."
+		                MESSAGE_WARNING "IPv4 is not active, but ipv4 module still running."
                     else
-		                MESSAGE_ERROR "IPv4 is not active and ipv4 module is not active."
+		                MESSAGE_INFO "IPv4 is not active and ipv4 module is not active."
 	                fi
                 fi
 		echo "	"
 		echo "== Ip6tables -S: =="
-                if ${PATH_IFCONFIG_BIN}/ifconfig | grep -q inet6 ; then 
+                if ${PATH_IFC_BIN}/ifconfig | grep -q inet6 ; then 
 				    ip6tables -S
                 else
 	                if lsmod | grep -q ipv6 ; then
-		                MESSAGE_ERROR "IPv6 is not active, but ipv6 module still running."
+		                MESSAGE_WARNING "IPv6 is not active, but ipv6 module still running."
                     else
-		                MESSAGE_ERROR "IPv6 is not active and module ipv6 is not active."
+		                MESSAGE_INFO "IPv6 is not active and module ipv6 is not active."
 	                fi
                 fi
 		echo "	"
