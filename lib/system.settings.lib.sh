@@ -7,6 +7,14 @@
 
 
     LINUX_DISTRIBUTION=$(lsb_release -is)
+
+    ##  workaround for stupid system settings:     https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=904988
+    if [[ ! ":$PATH:" == *":/sbin:"* ]]; then 
+        MESSAGE_WARNING 'Path /sbin not found in $PATH environment variable. ' ; 
+        MESSAGE_WARNING 'We will try to temporarily add /sbin /usr/sbin .' ;
+        export $PATH=$PATH:/sbin:/usr/sbin ; 
+    fi
+
 #   PATH_BIN = Path to iptables binary
 	PATH_BIN=$(dirname $(which iptables) |  awk '{ print $1 "/" }')
 	PATH_BIN_2=$(dirname $(which iptables))

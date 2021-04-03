@@ -16,12 +16,8 @@ DEBUG="ON"    # Switch if you need: DEBUG="OFF" / DEBUG="ON"
 NAME_APP="tmur"
 
 source lib/messages.lib.sh
+[[ $EUID -ne 0 ]] && echo -e "${RC} This script must be run as root. ${NC}" && exit 1   ##  Check root running
 source lib/system.settings.lib.sh
-
-
-##  Check root running
-[[ $EUID -ne 0 ]] && echo -e "${RC} This script must be run as root. ${NC}" && exit 1
-
 
 
 #######################################{

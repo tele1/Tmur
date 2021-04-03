@@ -49,7 +49,7 @@ PRINT_ERROR_NOT_SUPPORTED() {
     #   Use of a SUPPORT variable forces the declaration of this variable in the script you are running.
     printf "${RD}%s${NC}" "======================"
     printf "${RD}%s${NC}" "--> Error: $1 not found or you have not installed."
-    printf "${RD}%s${NC}" "	 Ask developers your linux distributionfor to get help and better support."
+    printf "${RD}%s${NC}" "	 Ask developers your linux distribution for to get help and better support."
     printf "${RD}%s${NC}" "  And write also there  $SUPPORT "
     printf "${RD}%s${NC}" "Exiting."
     exit 1
