@@ -274,6 +274,8 @@ fi
     if [ -f "/etc/iptables/firewall.list.rules.v4" ]; then
         rm -v   /etc/iptables/firewall.list.rules.v4
         rm -v   /etc/iptables/firewall.list.rules.v6
+        rm -v   /etc/iptables/ip4tables.rules
+        rm -v   /etc/iptables/ip6tables.rules
     fi
 }
 

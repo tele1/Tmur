@@ -19,8 +19,8 @@ Useful links:
 Example: File:   /etc/network/if-pre-up.d/iptables
 ```
 #!/bin/sh
-/usr/sbin/iptables-restore < /etc/iptables/rules.v4
-/usr/sbin/ip6tables-restore < /etc/iptables/rules.v6
+/usr/sbin/iptables-restore < /etc/iptables/ip4tables.rules
+/usr/sbin/ip6tables-restore < /etc/iptables/ip6tables.rules
 ```
 ```
 chmod 510 /etc/network/if-pre-up.d/iptables
