@@ -71,8 +71,8 @@ echo -e " > Saving rules."
 	#mkdir -p /etc/iptables
 	${PATH_IPT_BIN}/iptables-save > /etc/iptables/ip4tables.rules
 	${PATH_IPT_BIN}/ip6tables-save > /etc/iptables/ip6tables.rules
-	echo "$ADD_LIST_v4" > /etc/iptables/firewall.list.rules.v4
-	echo "$ADD_LIST_v6" > /etc/iptables/firewall.list.rules.v6
+	echo "$ADD_LIST_v4" > /etc/iptables/tmur.list.rules.v4
+	echo "$ADD_LIST_v6" > /etc/iptables/tmur.list.rules.v6
 }
 
 status_v4() {
@@ -89,7 +89,7 @@ if ! cmp -s <(echo "$LOADED_FIREWALL_4") <(echo "$SAVED_FIREWALL_4") ; then
     MESSAGE_DEBUG "$SAVED_FIREWALL_4"
     MESSAGE_ERROR "Error: Loaded firewall ipv4 is other than saved in /etc/iptables/ip4tables.rules"
 else
-    cat /etc/iptables/firewall.list.rules.v4
+    cat /etc/iptables/tmur.list.rules.v4
 fi
 }
 
@@ -100,7 +100,7 @@ status_v6() {
 if ! cmp -s <(echo "$SAVED_FIREWALL_6") <(echo "$LOADED_FIREWALL_6") ; then
     MESSAGE_ERROR "Error: Loaded firewall ipv6 is other than saved in /etc/iptables/ip6tables.rules"
 else
-    cat /etc/iptables/firewall.list.rules.v6
+    cat /etc/iptables/tmur.list.rules.v6
 fi
 }
 
@@ -281,7 +281,7 @@ case $1 in
 			fi
 		done
 		echo "--> We will add: ${@:2} "
-		WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/firewall.list.rules.v4)\n${@:2}" | sort -r | tr '\n' ' ')
+		WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/tmur.list.rules.v4)\n${@:2}" | sort -r | tr '\n' ' ')
 		reset_firewall_v4
 		echo "== Loading rules ... == "
 		for i in ${WITH_NEW_RULES} ; do "$i" ; done
@@ -289,7 +289,7 @@ case $1 in
 		export ADD_LIST_v4=$( echo "$WITH_NEW_RULES" | tr ' ' '\n' | sed -e '/^\ *$/d' )
 		save
 		#echo "== Used rules now: =="
-		#	cat /etc/iptables/firewall.list.rules.v4
+		#	cat /etc/iptables/tmur.list.rules.v4
 		#echo "==             =="
   ;;
  "-r4"|"--remove.v4")
@@ -298,7 +298,7 @@ case $1 in
 			echo "Rule is not active: ${2}" ; exit 1
 		fi
 		echo " --> We will remove: ${2} "
-		NEW_RULES=$(cat /etc/iptables/firewall.list.rules.v4 | sed "/${2}/d" | tr '\n' ' ')
+		NEW_RULES=$(cat /etc/iptables/tmur.list.rules.v4 | sed "/${2}/d" | tr '\n' ' ')
 		# echo " --> New rules: $NEW_RULES"
 		reset_firewall_v4
 		echo "== Loading rules ... == "
@@ -306,7 +306,7 @@ case $1 in
 		export ADD_LIST_v4=$( echo "$NEW_RULES" | tr ' ' '\n' )
 		save
 		#echo "== Used rules now: =="
-		#	cat /etc/iptables/firewall.list.rules.v4
+		#	cat /etc/iptables/tmur.list.rules.v4
 		#echo "==             =="
   ;;
   "--block.v4")
@@ -316,7 +316,7 @@ case $1 in
     COMMENT="-m comment --comment "IPTABLES:block_IP""
     RULE_IP_1=$(echo "${PATH_IPT_BIN}/iptables -I INPUT  -s ${2} -j DROP ${COMMENT}")
     RULE_IP_2=$(echo "${PATH_IPT_BIN}/iptables -I OUTPUT -d ${2} -j DROP ${COMMENT}")
-    WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/firewall.list.rules.v4)\n${RULE_IP_1} \n${RULE_IP_2}")
+    WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/tmur.list.rules.v4)\n${RULE_IP_1} \n${RULE_IP_2}")
     MESSAGE_DEBUG "$WITH_NEW_RULES"
 
     reset_firewall_v4
@@ -333,7 +333,7 @@ case $1 in
     COMMENT="-m comment --comment "IPTABLES:block_range_of_IP""
     RULE_IP_1=$(echo "${PATH_IPT_BIN}/iptables -I INPUT  -m iprange --src-range ${2}-${3} -j DROP ${COMMENT}")
     RULE_IP_2=$(echo "${PATH_IPT_BIN}/iptables -I OUTPUT -m iprange --dst-range ${2}-${3} -j DROP ${COMMENT}")
-    WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/firewall.list.rules.v4)\n${RULE_IP_1} \n${RULE_IP_2}")
+    WITH_NEW_RULES=$(echo -e "$(cat /etc/iptables/tmur.list.rules.v4)\n${RULE_IP_1} \n${RULE_IP_2}")
     MESSAGE_DEBUG "$WITH_NEW_RULES"
 
     reset_firewall_v4
@@ -360,11 +360,11 @@ case $1 in
 #------------------------
   "--export.v4")
 		## If variable is empty
-		[ -z "$2" ] && FILE="firewall.list.rules.save.v4" ||  FILE="$2"
+		[ -z "$2" ] && FILE="tmur.list.rules.save.v4" ||  FILE="$2"
 		echo "== Used rules: =="
 			## Last option is moved to begin then you can add options hand.
-			FIRST=$(tail -n 1 /etc/iptables/firewall.list.rules.v4)
-			SECOND=$(grep -v "${FIRST}" /etc/iptables/firewall.list.rules.v4 |  tr '\n' ' ')
+			FIRST=$(tail -n 1 /etc/iptables/tmur.list.rules.v4)
+			SECOND=$(grep -v "${FIRST}" /etc/iptables/tmur.list.rules.v4 |  tr '\n' ' ')
 			# remove user permissions, before create file
 			umask 177
 			# Create file
@@ -374,11 +374,11 @@ case $1 in
   ;;
   "--export.v6")
 		## If variable is empty
-		[ -z "$2" ] && FILE="firewall.list.rules.save.v6" ||  FILE="$2"
+		[ -z "$2" ] && FILE="tmur.list.rules.save.v6" ||  FILE="$2"
 		echo "== Used rules: =="
 			## Last option is moved to begin then you can add options hand.
-			FIRST=$(tail -n 1 /etc/iptables/firewall.list.rules.v6)
-			SECOND=$(grep -v "${FIRST}" /etc/iptables/firewall.list.rules.v6 |  tr '\n' ' ')
+			FIRST=$(tail -n 1 /etc/iptables/tmur.list.rules.v6)
+			SECOND=$(grep -v "${FIRST}" /etc/iptables/tmur.list.rules.v6 |  tr '\n' ' ')
 			# remove user permissions, before create file
 			umask 177
 			# Create file
@@ -389,7 +389,7 @@ case $1 in
   "--import.v4")
 		[ -z "$2" ] &&  echo "But which file import ?" && exit 1
 	echo "== Used before rules: =="
-		cat /etc/iptables/firewall.list.rules.v4
+		cat /etc/iptables/tmur.list.rules.v4
 	echo "==             =="
 			FIRST=$(awk '{print $1;}' $2)
 			SECOND=$(cut -d' ' -f2- $2)
@@ -399,13 +399,13 @@ case $1 in
 	export ADD_LIST_v4=$( echo "${SECOND} $FIRST" | tr ' ' '\n' | sed -e '/^\ *$/d' )
 	save
 	echo "== Used rules: =="
-		cat /etc/iptables/firewall.list.rules.v4
+		cat /etc/iptables/tmur.list.rules.v4
 	echo "==             =="
   ;;
  "--import.v6")
 		[ -z "$2" ] &&  echo "But which file import ?" && exit 1
 	echo "== Used before rules: =="
-		cat /etc/iptables/firewall.list.rules.v6
+		cat /etc/iptables/tmur.list.rules.v6
 	echo "==             =="
 			FIRST=$(awk '{print $1;}' $2)
 			SECOND=$(cut -d' ' -f2- $2)
@@ -415,7 +415,7 @@ case $1 in
 	export ADD_LIST_v4=$( echo "${SECOND} $FIRST" | tr ' ' '\n' | sed -e '/^\ *$/d' )
 	save
 	echo "== Used rules: =="
-		cat /etc/iptables/firewall.list.rules.v6
+		cat /etc/iptables/tmur.list.rules.v6
 	echo "==             =="
   ;;
 #------------------------

@@ -40,6 +40,9 @@
 
     PATH_IFC_BIN=$(dirname $(which ifconfig))
         [ -z "$PATH_IFC_BIN" ] && PRINT_ERROR_NOT_SUPPORTED "Path to ifconfig"
+    
+    umask 177
+    mkdir -p /etc/iptables
 
 ######### Detect system service manager #####{
     #   Service manager like "init" or "systemd" is used for restore iptables rules after reboot or for other jobs.
@@ -57,10 +60,8 @@
 
 
     TMUR_SAVE() {
-            umask 177
-            mkdir -p /etc/iptables
-	        echo "$ADD_LIST_v4" > /etc/iptables/firewall.list.rules.v4
-	        echo "$ADD_LIST_v6" > /etc/iptables/firewall.list.rules.v6
+	        echo "$ADD_LIST_v4" > /etc/iptables/tmur.list.rules.v4
+	        echo "$ADD_LIST_v6" > /etc/iptables/tmur.list.rules.v6
     }
 
 
@@ -81,15 +82,17 @@
         }	
     elif echo "$SYSTEMD_PATH" | grep -q systemd ; then
             SYSTEM_SERVICE_MANAGER="systemd"
-            IPTABLES_SERVICES=$(systemctl --type=service --all | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk '{print $1}')
+            IPTABLES_SERVICES=$(systemctl list-unit-files | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk '{print $1}')
         save() {
             ONE_IPTABLE_SERVICE=$(head -n1 <<< "$IPTABLES_SERVICES")
 	        PATH_TO_RULES=$(systemctl cat "$ONE_IPTABLE_SERVICE" | grep ExecStart | awk '{ print $2 }')
             if [ -z "$PATH_TO_RULES" ] ; then
                 echo "IPTABLES_SERVICES not found"
             else
-                iptables-save  > "$PATH_TO_RULES"
-                ip6tables-save > "$PATH_TO_RULES"
+                #iptables-save  > "$PATH_TO_RULES"
+                #ip6tables-save > "$PATH_TO_RULES"
+                iptables-save  > /etc/iptables/ip4tables.rules
+                ip6tables-save > /etc/iptables/ip6tables.rules
             fi
             TMUR_SAVE
         }
