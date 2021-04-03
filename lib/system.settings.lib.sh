@@ -12,7 +12,7 @@
     if [[ ! ":$PATH:" == *":/sbin:"* ]]; then 
         MESSAGE_WARNING 'Path /sbin not found in $PATH environment variable. ' ; 
         MESSAGE_WARNING 'We will try to temporarily add /sbin /usr/sbin .' ;
-        export $PATH=$PATH:/sbin:/usr/sbin ; 
+        export PATH=$PATH:/sbin:/usr/sbin ; 
     fi
 
 #   PATH_BIN = Path to iptables binary
