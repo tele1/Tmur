@@ -71,38 +71,55 @@
     #   function save = saves used rules to a file. System service manager loads service iptables file at system startup.
     if echo "$INIT_PATH" | grep -q init ; then
             SYSTEM_SERVICE_MANAGER="init"
-            IPTABLES_SERVICES=$(ls  /etc/init.d/* | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk  -F'/' '{print $NF}')
+            IPTABLES_SERVICES=$(ls  /etc/init.d/* | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk  -F'/' '{print $NF}' 2>/dev/null)
         save() {
-            while IFS= read -r LINE_SERVICE ; do
-                # Will save to file for iptables-restore
-                service "$LINE_SERVICE" save
-            done <<< "${IPTABLES_SERVICES}"
-            # Will save to file for Tmur
+            if [ -z "$IPTABLES_SERVICES" ] ; then
+                 MESSAGE_WARNING "Not found iptables service installed. "
+                 MESSAGE_WARNING "Without this service, iptables rules will not be loaded at computer startup."
+            else
+                while IFS= read -r LINE_SERVICE ; do
+                    # Will save to file for iptables-restore
+                    service "$LINE_SERVICE" save
+                done <<< "${IPTABLES_SERVICES}"
+            fi
             TMUR_SAVE
         }	
     elif echo "$SYSTEMD_PATH" | grep -q systemd ; then
             SYSTEM_SERVICE_MANAGER="systemd"
-            IPTABLES_SERVICES=$(systemctl list-unit-files | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk '{print $1}')
+            IPTABLES_SERVICES=$(systemctl list-unit-files | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk '{print $1}' 2>/dev/null)
         save() {
-            ONE_IPTABLE_SERVICE=$(head -n1 <<< "$IPTABLES_SERVICES")
-	        PATH_TO_RULES=$(systemctl cat "$ONE_IPTABLE_SERVICE" | grep ExecStart | awk '{ print $2 }')
-            if [ -z "$PATH_TO_RULES" ] ; then
-                echo "IPTABLES_SERVICES not found"
+            if [ -z "$IPTABLES_SERVICES" ] ; then
+                 MESSAGE_WARNING "Not found iptables service installed. "
+                 MESSAGE_WARNING "Without this service, iptables rules will not be loaded at computer startup."
             else
-                #iptables-save  > "$PATH_TO_RULES"
-                #ip6tables-save > "$PATH_TO_RULES"
-                iptables-save  > /etc/iptables/ip4tables.rules
-                ip6tables-save > /etc/iptables/ip6tables.rules
+                # my way to recover the path to save the rules there ( unfinished - the system can have 1 or 2 services, so 1 or two files where I must save rules ) 
+                #ONE_IPTABLE_SERVICE=$(head -n1 <<< "$IPTABLES_SERVICES")
+	            #PATH_TO_RULES=$(systemctl cat "$ONE_IPTABLE_SERVICE" | grep ExecStart | awk '{ print $2 }')
+                #if [ -z "$PATH_TO_RULES" ] ; then
+                #    echo "PATH_TO_RULES is empty."
+                #fi
+                if grep  -q "installed from Tmur" /etc/systemd/system/ip4tables.service ; then
+                    iptables-save  > /etc/iptables/ip4tables.rules
+                    ip6tables-save > /etc/iptables/ip6tables.rules
+                else
+                    MESSAGE_INFO "Iptables service found. But you have to manually save the rules to a file for service."
+                    MESSAGE_INFO "$IPTABLES_SERVICES"
+                fi
             fi
             TMUR_SAVE
         }
     elif echo "$OPENRC_PATH" | grep -q openrc ; then
             SYSTEM_SERVICE_MANAGER="openrc"
-            IPTABLES_SERVICES=$(ls  /etc/init.d/* | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk  -F'/' '{print $NF}')
+            IPTABLES_SERVICES=$(ls  /etc/init.d/* | grep 'iptables\|ip4tables\|ip6tables\|netfilter' | awk  -F'/' '{print $NF}' 2>/dev/null)
         save() {
-            while IFS= read -r LINE_SERVICE ; do
-                rc-service "$LINE_SERVICE" save
-            done <<< "${IPTABLES_SERVICES}"
+            if [ -z "$IPTABLES_SERVICES" ] ; then
+                 MESSAGE_WARNING "Not found iptables service installed. "
+                 MESSAGE_WARNING "Without this service, iptables rules will not be loaded at computer startup."
+            else
+                while IFS= read -r LINE_SERVICE ; do
+                    rc-service "$LINE_SERVICE" save
+                done <<< "${IPTABLES_SERVICES}"
+            fi
             TMUR_SAVE
         }
     else
